@@ -170,14 +170,15 @@ textarea.chat::placeholder{color:var(--faint);}
 .check-item.got .check-iqty{color:var(--muted);}
 .check-iunit{font-size:11px;color:var(--muted);}
 
-/* PRICE INPUT */
-.price-row{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr);}
-.price-label{font-size:11px;color:var(--muted);flex-shrink:0;}
-.price-input-wrap{display:flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--bdr);border-radius:6px;padding:5px 8px;flex:1;}
-.price-currency{font-size:12px;color:var(--muted);font-weight:600;}
-.price-input{border:none;outline:none;font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:600;color:var(--text);background:transparent;width:100%;text-align:right;}
+/* PRICE INPUT - inline com subtotal */
+.price-row{display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--bdr);}
+.price-label{font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;}
+.price-input-wrap{display:flex;align-items:center;gap:3px;background:var(--surface2);border:1px solid var(--bdr);border-radius:6px;padding:4px 7px;width:90px;flex-shrink:0;}
+.price-currency{font-size:11px;color:var(--muted);font-weight:600;flex-shrink:0;}
+.price-input{border:none;outline:none;font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--text);background:transparent;width:55px;text-align:right;}
 .price-input::placeholder{color:var(--faint);font-weight:400;}
-.price-subtotal{font-size:12px;color:var(--green);font-weight:700;flex-shrink:0;min-width:60px;text-align:right;}
+.price-arrow{font-size:12px;color:var(--muted);flex-shrink:0;}
+.price-subtotal{font-size:13px;font-weight:700;color:var(--green);flex:1;text-align:right;white-space:nowrap;}
 
 .done-banner{background:var(--green-lt);border:1px solid #a5d6a7;border-radius:var(--radius);text-align:center;padding:20px;margin-top:8px;font-size:14px;color:var(--green);font-weight:600;}
 .btn-reset{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:1px dashed var(--bdr2);background:transparent;color:var(--muted);font-family:'Inter',system-ui,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .12s;}
@@ -266,12 +267,12 @@ const CATS = {
   "Laticínios":         { icon:"🧀", cor:"#f9a825", kw:["queijo","manteiga","margarina","requeijão","requeijao","creme de leite","leite condensado","catupiry","cream cheese","ricota","muçarela","mussarela","parmesão","parmesao","iogurte","yakult","leite","nata","coalho"] },
   "Padaria / Cereais":  { icon:"🍞", cor:"#ef6c00", kw:["pão","pao","bolo","biscoito","bolacha","macarrão","macarrao","arroz","feijão","feijao","lentilha","cereal","aveia","granola","farinha","tapioca","cuscuz","milho","polenta","massa","lasanha","espaguete","panetone","torrada","cream cracker"] },
   "Carnes e Proteínas": { icon:"🥩", cor:"#c62828", kw:["carne","frango","peixe","atum","sardinha","salsicha","linguiça","linguica","presunto","peito de peru","bacon","mortadela","hamburguer","hamburger","filé","file","picanha","costela","camarão","camarao","ovo","ovos","apresuntado"] },
-  "Hortifruti":         { icon:"🥦", cor:"#2e7d32", kw:["alface","tomate","cebola","alho","batata","cenoura","pepino","abobrinha","brocolis","brócolis","couve","banana","maçã","maca","laranja","uva","morango","abacate","limão","limao","fruta","legume","verdura","melancia","melão","melon","pera","mamão","mamao"] },
-  "Congelados":         { icon:"❄️", cor:"#7b1fa2", kw:["congelado","sorvete","pizza pronta","nugget","batata frita","empanado","lasanha congelada","açaí","acai"] },
-  "Limpeza":            { icon:"🧹", cor:"#00838f", kw:["detergente","sabão","sabao","amaciante","desinfetante","alvejante","limpador","multiuso","esponja","papel toalha","papel higiênico","papel higienico","guardanapo","saco de lixo","vassoura","candida","veja","omo","ariel","tira mancha","pinho","cif","flash","downy","comfort"] },
-  "Higiene":            { icon:"🧴", cor:"#0277bd", kw:["shampoo","condicionador","sabonete","creme dental","pasta de dente","fio dental","desodorante","absorvente","fralda","cotonete","algodão","alcool","álcool","gel alcool","lenço","curativo","band-aid","protetor","dove","colgate","gillette","always","pantene"] },
-  "Salgadinhos":        { icon:"🍿", cor:"#ff8f00", kw:["amendoim","salgadinho","chips","pipoca","batata frita","castanha","nozes","amendoim","amendoim caju","castanha de caju","caju","torresmo","biscoito salgado","biscoito de polvilho","polvilho","pé de moleque","paçoca","pacoca","torrada salgada","pretzel","cracker","ritz","elma chips","fandangos","cheetos","doritos","lays"] },
-  "Doces e Sobremesas": { icon:"🍫", cor:"#ad1457", kw:["chocolate","bala","chiclete","pirulito","barrinha","doce","cocada","wafer","trident","halls","bom bom","talento","bis","kitkat","snickers","twix","toblerone","ferrero","nutella","geleia","mel","brigadeiro","pudim","romeu e julieta"] },
+  "Hortifruti":         { icon:"🥦", cor:"#2e7d32", kw:["alface","tomate","cebola","alho","batata doce","cenoura","pepino","abobrinha","brocolis","brócolis","couve","banana","maçã","maca","laranja","uva","morango","abacate","limão","limao","fruta","legume","verdura","melancia","melão","melon","pera","mamão","mamao","manga","kiwi","abacaxi","goiaba","caqui","inhame","beterraba","rabanete","salsinha","coentro","hortelã"] },
+  "Congelados":         { icon:"❄️", cor:"#7b1fa2", kw:["congelado","pizza pronta","nugget","empanado","lasanha congelada","açaí","acai","picolé","picole","sorvete","geladinho"] },
+  "Limpeza":            { icon:"🧹", cor:"#00838f", kw:["detergente","sabão","sabao","amaciante","desinfetante","alvejante","limpador","multiuso","esponja","papel toalha","papel higiênico","papel higienico","guardanapo","saco de lixo","vassoura","candida","veja","omo","ariel","tira mancha","pinho","cif","downy","comfort","brilhante","minuano","assim"] },
+  "Higiene":            { icon:"🧴", cor:"#0277bd", kw:["shampoo","condicionador","sabonete","creme dental","pasta de dente","fio dental","desodorante","absorvente","fralda","cotonete","algodão","alcool","álcool","gel alcool","lenço","curativo","band-aid","protetor","dove","colgate","gillette","always","pantene","rexona","nivea","johnsons"] },
+  "Salgadinhos":        { icon:"🍿", cor:"#ff8f00", kw:["amendoim","salgadinho","chips","pipoca","castanha","nozes","castanha de caju","caju","torresmo","biscoito salgado","biscoito de polvilho","polvilho","torrada salgada","pretzel","cracker","ritz","elma chips","fandangos","cheetos","doritos","lays","pringles","torcida","ebicen","trakinas","mupy","mupi","forno de minas salgado","baconzitos","sensacoes","sensações","tubetes","banana nanica frita","bananinha salgada","amendocrem"] },
+  "Doces e Sobremesas": { icon:"🍫", cor:"#ad1457", kw:["chocolate","bala","chiclete","pirulito","barrinha","doce","cocada","wafer","trident","halls","bom bom","talento","bis","kitkat","snickers","twix","toblerone","ferrero","nutella","geleia","brigadeiro","pudim","romeu e julieta","bananinha","goiabada","maria mole","beijinho","cajuzinho","coquinho","paçoca","pacoca","pé de moleque","rapadura"] },
   "Mercearia":          { icon:"🏪", cor:"#546e7a", kw:["azeite","oleo","óleo","vinagre","sal","açúcar","acucar","ketchup","mostarda","maionese","molho","pimenta","tempero","caldo","extrato de tomate","shoyu","fermento","canela","orégano","oregano","café","cafe","farofa","milho verde","ervilha","atum","sardinha em lata","feijão","feijao cozido"] },
 };
 
@@ -633,13 +634,13 @@ function renderCheck(m){
           <div><span class="check-iqty">${it.total}</span><span class="check-iunit"> ${it.unidade}</span></div>
         </div>
         <div class="price-row">
-          <span class="price-label">Preço unit.:</span>
+          <span class="price-label">R$</span>
           <div class="price-input-wrap">
-            <span class="price-currency">R$</span>
             <input class="price-input" type="number" step="0.01" min="0" placeholder="0,00"
-              value="${preco}" onchange="updatePreco(${it.idx},this.value)" oninput="updatePreco(${it.idx},this.value)">
+              value="${preco||''}" onchange="updatePreco(${it.idx},this.value)" oninput="updatePreco(${it.idx},this.value)">
           </div>
-          <div class="price-subtotal">${subtotal?'R$ '+subtotal:''}</div>
+          <span class="price-arrow">×${it.total} =</span>
+          <div class="price-subtotal" id="sub-${it.idx}">${subtotal?'R$ '+subtotal:''}</div>
         </div>
       </div>`;
     });
@@ -781,27 +782,52 @@ function gerarConsolidado(){
 function toggleCheck(idx){
   if(!checklist[idx])checklist[idx]={checked:false,preco:0};
   checklist[idx].checked=!checklist[idx].checked;
+  // Atualizar só o item visualmente sem re-renderizar tudo
+  const ci=document.getElementById('ci-'+idx);
+  const circle=ci?.querySelector('.check-circle');
+  const name=ci?.querySelector('.check-iname');
+  const qty=ci?.querySelector('.check-iqty');
+  if(ci){
+    ci.classList.toggle('got',checklist[idx].checked);
+    if(circle)circle.textContent=checklist[idx].checked?'✓':'';
+  }
+  // Atualizar progresso
+  const total=consolidado.length;
+  const done=consolidado.filter((_,i)=>checklist[i]?.checked).length;
+  const pct=total?Math.round(done/total*100):0;
+  const pf=document.querySelector('.progress-fill');
+  if(pf)pf.style.width=pct+'%';
+  const ht=document.querySelector('.check-header-text span');
+  if(ht)ht.textContent=`Toque para marcar · ${done}/${total} (${pct}%)`;
+  if(done===total&&total>0){
+    let totalGasto=0;
+    consolidado.forEach((_,i)=>{const p=checklist[i]?.preco||0;const q=consolidado[i]?.total||1;if(p>0)totalGasto+=p*q;});
+    const existing=document.querySelector('.done-banner');
+    if(!existing){
+      const btn=document.querySelector('.btn-salvar-compra');
+      if(btn){const div=document.createElement('div');div.className='done-banner';div.textContent=`🎉 Tudo comprado! Total: R$ ${totalGasto.toFixed(2).replace('.',',')}`;btn.before(div);}
+    }
+  }
   salvar();
-  renderCheck(document.getElementById('main'));
 }
 
 function updatePreco(idx,val){
   if(!checklist[idx])checklist[idx]={checked:false,preco:0};
   checklist[idx].preco=parseFloat(val)||0;
-  // Atualizar total sem re-renderizar tudo
-  let totalGasto=0;
-  consolidado.forEach((_,i)=>{
-    const p=checklist[i]?.preco||0;
-    const q=consolidado[i]?.total||1;
-    if(p>0)totalGasto+=p*q;
-  });
-  const tv=document.querySelector('.check-total-val');
-  if(tv)tv.textContent='R$ '+totalGasto.toFixed(2).replace('.',',');
   // Atualizar subtotal do item
   const q=consolidado[idx]?.total||1;
   const p=checklist[idx]?.preco||0;
-  const ci=document.querySelector(`#ci-${idx} .price-subtotal`);
-  if(ci)ci.textContent=p?'R$ '+(p*q).toFixed(2).replace('.',','):'';
+  const sub=document.getElementById('sub-'+idx);
+  if(sub)sub.textContent=p?'R$ '+(p*q).toFixed(2).replace('.',','):'';
+  // Atualizar total geral
+  let totalGasto=0;
+  consolidado.forEach((_,i)=>{
+    const pi=checklist[i]?.preco||0;
+    const qi=consolidado[i]?.total||1;
+    if(pi>0)totalGasto+=pi*qi;
+  });
+  const tv=document.querySelector('.check-total-val');
+  if(tv)tv.textContent='R$ '+totalGasto.toFixed(2).replace('.',',');
   // Salvar com debounce
   clearTimeout(window._precoTimer);
   window._precoTimer=setTimeout(()=>salvar(),800);
