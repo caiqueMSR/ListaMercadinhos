@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ListaMercado</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#f0f2f0;--surface:#fff;--surface2:#f7f8f7;--bdr:#dde3dd;--bdr2:#c8d0c8;
+  --green:#2e7d32;--green-lt:#e8f5e9;--green-md:#4caf50;--green-btn:#388e3c;
+  --text:#1a1a1a;--text2:#444;--muted:#777;--faint:#aaa;
+  --red:#c62828;--red-lt:#ffebee;--yellow:#f57f17;--yel-lt:#fff8e1;
+  --blue:#1565c0;--blue-lt:#e3f2fd;
+  --viena:#6a1b9a;--mirella:#bf360c;--montana:#01579b;--flash:#2e7d32;
+  --viena-lt:#f3e5f5;--mirella-lt:#fbe9e7;--montana-lt:#e1f5fe;--flash-lt:#e8f5e9;
+  --radius:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:600px;margin:0 auto;font-size:14px;line-height:1.4;}
+
+/* SYNC */
+.sync-bar{height:3px;background:var(--green-lt);position:fixed;top:0;left:0;right:0;z-index:200;}
+.sync-bar.syncing{background:var(--green-md);animation:pulse 1s infinite;}
+.sync-bar.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green-md);display:inline-block;margin-left:6px;vertical-align:middle;}
+.sync-dot.offline{background:var(--red);}
+.sync-dot.syncing{background:var(--yellow);animation:pulse .8s infinite;}
+
+/* HEADER */
+.hdr{background:var(--green);padding:14px 14px 11px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:3px;z-index:50;box-shadow:var(--shadow-md);}
+.logo{font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:7px;}
+.wk{font-size:11px;font-weight:500;color:rgba(255,255,255,.75);background:rgba(255,255,255,.15);border-radius:20px;padding:3px 9px;display:flex;align-items:center;gap:4px;}
+
+/* TABS */
+.tabs{background:var(--surface);border-bottom:1px solid var(--bdr);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:52px;z-index:40;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:10px 12px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;user-select:none;display:flex;align-items:center;gap:4px;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.tab[data-l="viena"].active{color:var(--viena);border-bottom-color:var(--viena);}
+.tab[data-l="mirella"].active{color:var(--mirella);border-bottom-color:var(--mirella);}
+.tab[data-l="montana"].active{color:var(--montana);border-bottom-color:var(--montana);}
+.tab[data-l="flash"].active{color:var(--flash);border-bottom-color:var(--flash);}
+.tab[data-l="compras"].active{color:var(--yellow);border-bottom-color:var(--yellow);}
+.tab[data-l="estoque"].active{color:var(--blue);border-bottom-color:var(--blue);}
+.tab[data-l="hist"].active{color:#5d4037;border-bottom-color:#5d4037;}
+.badge{font-size:10px;font-weight:700;background:var(--bdr);color:var(--muted);border-radius:10px;padding:1px 5px;min-width:18px;text-align:center;}
+.tab.active .badge{background:var(--green-lt);color:var(--green);}
+.tab[data-l="viena"].active .badge{background:var(--viena-lt);color:var(--viena);}
+.tab[data-l="mirella"].active .badge{background:var(--mirella-lt);color:var(--mirella);}
+.tab[data-l="montana"].active .badge{background:var(--montana-lt);color:var(--montana);}
+.tab[data-l="flash"].active .badge{background:var(--flash-lt);color:var(--flash);}
+
+/* MAIN */
+.main{padding:12px;}
+
+/* SEARCH — sem re-render ao digitar */
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);padding:8px 12px;margin-bottom:10px;box-shadow:var(--shadow);}
+.search-icon{font-size:15px;color:var(--muted);flex-shrink:0;}
+.search-input{flex:1;border:none;outline:none;font-family:'Inter',system-ui,sans-serif;font-size:14px;color:var(--text);background:transparent;}
+.search-input::placeholder{color:var(--faint);}
+.search-clear{font-size:14px;color:var(--muted);cursor:pointer;padding:2px 4px;}
+
+/* INPUT */
+.inp-box{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden;}
+.inp-top-bar{height:4px;}
+.inp-body{padding:12px;}
+.inp-label{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+textarea.chat{width:100%;background:var(--surface2);border:1px solid var(--bdr);border-radius:6px;padding:9px 10px;color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;resize:none;min-height:72px;outline:none;line-height:1.5;transition:border-color .15s;}
+textarea.chat:focus{border-color:var(--green-md);box-shadow:0 0 0 3px rgba(76,175,80,.12);}
+textarea.chat::placeholder{color:var(--faint);}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4;}
+.hint b{color:var(--green);}
+.btn-row{display:flex;gap:6px;margin-top:10px;}
+.btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 14px;border-radius:6px;border:none;font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:filter .12s,transform .1s;}
+.btn:active{transform:scale(.97);}
+.btn-primary{flex:1;background:var(--green-btn);color:#fff;}
+.btn-primary:hover{filter:brightness(1.08);}
+
+/* CATEGORY HEADER — destaque visual */
+.cat-section{margin-bottom:14px;}
+.cat-header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--green-lt);border:1px solid #a5d6a7;border-radius:var(--radius);margin-bottom:6px;}
+.cat-icon{font-size:18px;}
+.cat-name{font-size:13px;font-weight:700;color:var(--green);flex:1;text-transform:uppercase;letter-spacing:.5px;}
+.cat-count{font-size:11px;font-weight:700;color:var(--green);background:#fff;border:1px solid #a5d6a7;border-radius:5px;padding:1px 7px;}
+
+/* SECTION TITLE */
+.sec-title{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;}
+.sec-count{background:var(--surface);border:1px solid var(--bdr);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600;color:var(--text2);}
+
+/* ITEM CARD */
+.icard{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);margin-bottom:5px;box-shadow:var(--shadow);animation:fadeIn .18s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.icat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.iinfo{flex:1;min-width:0;}
+.iname{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.icat-label{font-size:11px;color:var(--muted);margin-top:1px;}
+.iqty{font-size:17px;font-weight:700;flex-shrink:0;white-space:nowrap;}
+.iunit{font-size:11px;color:var(--muted);font-weight:400;}
+.btn-edit{width:28px;height:28px;border-radius:6px;border:1px solid var(--bdr);background:var(--surface2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .12s;}
+.btn-edit:hover{background:var(--green-lt);color:var(--green);border-color:#a5d6a7;}
+.btn-rm{width:28px;height:28px;border-radius:6px;border:1px solid var(--bdr);background:var(--surface2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .12s;}
+.btn-rm:hover{background:var(--red-lt);color:var(--red);border-color:#ffcdd2;}
+.btn-limpar-tudo{width:100%;margin-top:10px;padding:11px;border-radius:6px;border:1.5px dashed #ffcdd2;background:var(--red-lt);color:var(--red);font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;}
+.btn-limpar-tudo:hover{background:#ffcdd2;border-color:var(--red);}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px 16px;color:var(--muted);}
+.empty-icon{font-size:32px;margin-bottom:8px;}
+.empty-text{font-size:13px;line-height:1.5;}
+
+/* PREVIEW */
+.preview-box{background:var(--green-lt);border:1px solid #c8e6c9;border-radius:6px;padding:10px;margin-top:10px;}
+.preview-title{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--green);margin-bottom:8px;}
+.preview-item{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #c8e6c9;gap:6px;font-size:13px;}
+.preview-item:last-of-type{border-bottom:none;}
+.prev-name{flex:1;color:var(--text);}
+.prev-qty{font-weight:700;color:var(--green);}
+.prev-unit{color:var(--muted);font-size:11px;}
+.prev-rm{width:20px;height:20px;border-radius:4px;border:1px solid #a5d6a7;background:#fff;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .12s;}
+.prev-rm:hover{background:var(--red-lt);color:var(--red);border-color:#ffcdd2;}
+.preview-actions{display:flex;gap:6px;margin-top:8px;}
+.btn-confirm{flex:1;padding:8px;background:var(--green-btn);color:#fff;border:none;border-radius:6px;font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-cancel{padding:8px 12px;background:var(--surface);color:var(--muted);border:1px solid var(--bdr);border-radius:6px;font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+
+/* ABA COMPRAS (consolidado + check + preço) */
+.compras-header{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);padding:11px 13px;margin-bottom:10px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.compras-header-left strong{display:block;font-size:14px;font-weight:700;color:var(--text);}
+.compras-header-left span{font-size:12px;color:var(--muted);}
+.btn-atualizar{display:flex;align-items:center;gap:5px;padding:8px 13px;background:var(--green-btn);color:#fff;border:none;border-radius:6px;font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;transition:filter .12s,transform .1s;}
+.btn-atualizar:hover{filter:brightness(1.08);}
+.btn-atualizar:active{transform:scale(.96);}
+.progress-bar{height:5px;background:var(--bdr);border-radius:3px;margin-bottom:10px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--yellow);border-radius:3px;transition:width .35s ease;}
+.total-box{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);padding:10px 13px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.total-label{font-size:12px;color:var(--muted);font-weight:600;}
+.total-val{font-size:22px;font-weight:700;color:var(--green);}
+
+/* COMPRAS ITEM — check + lojas + preço na mesma linha */
+.citem{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);padding:10px 12px;margin-bottom:5px;box-shadow:var(--shadow);animation:fadeIn .18s ease;}
+.citem.got{background:var(--green-lt);border-color:#a5d6a7;}
+.citem-top{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;}
+.check-circle{width:22px;height:22px;border-radius:50%;border:2px solid var(--bdr2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff;transition:all .15s;}
+.citem.got .check-circle{background:var(--green-btn);border-color:var(--green-btn);}
+.citem-name{font-size:14px;font-weight:500;flex:1;transition:color .15s;}
+.citem.got .citem-name{text-decoration:line-through;color:var(--muted);}
+.citem-total{font-size:15px;font-weight:700;color:var(--yellow);flex-shrink:0;}
+.citem.got .citem-total{color:var(--muted);}
+.citem-unit{font-size:11px;color:var(--muted);}
+
+/* Lojas + preço em linha */
+.citem-bottom{display:flex;align-items:center;gap:8px;margin-top:7px;padding-top:7px;border-top:1px solid var(--bdr);flex-wrap:wrap;}
+.chips{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.chip{font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;border:1px solid;}
+.chip[data-l="viena"]{color:var(--viena);border-color:#ce93d8;background:var(--viena-lt);}
+.chip[data-l="mirella"]{color:var(--mirella);border-color:#ffab91;background:var(--mirella-lt);}
+.chip[data-l="montana"]{color:var(--montana);border-color:#81d4fa;background:var(--montana-lt);}
+.chip[data-l="flash"]{color:var(--flash);border-color:#a5d6a7;background:var(--flash-lt);}
+.price-inline{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.price-curr{font-size:11px;color:var(--muted);font-weight:600;}
+.price-inp{width:65px;padding:4px 6px;border:1px solid var(--bdr);border-radius:5px;font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--text);background:var(--surface2);outline:none;text-align:right;}
+.price-inp:focus{border-color:var(--green-md);}
+.price-sub{font-size:12px;font-weight:700;color:var(--green);min-width:55px;text-align:right;}
+
+.done-banner{background:var(--green-lt);border:1px solid #a5d6a7;border-radius:var(--radius);text-align:center;padding:20px;margin-top:8px;font-size:14px;color:var(--green);font-weight:600;}
+.btn-salvar-compra{width:100%;padding:12px;margin-top:10px;border-radius:6px;border:none;background:var(--green-btn);color:#fff;font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:filter .12s;}
+.btn-salvar-compra:hover{filter:brightness(1.08);}
+.btn-reset{width:100%;padding:10px;margin-top:6px;border-radius:6px;border:1px dashed var(--bdr2);background:transparent;color:var(--muted);font-family:'Inter',system-ui,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .12s;}
+.btn-reset:hover{border-color:var(--muted);color:var(--text2);background:var(--surface);}
+.exp-bar{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr);}
+.btn-exp{flex:1;padding:9px;background:var(--surface);color:var(--text2);border:1px solid var(--bdr2);border-radius:6px;font-family:'Inter',system-ui,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;text-align:center;transition:background .12s;}
+.btn-exp:hover{background:var(--surface2);}
+
+/* ESTOQUE */
+.estoque-header{background:var(--blue-lt);border:1px solid #90caf9;border-radius:var(--radius);padding:11px 13px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.estoque-title{font-size:14px;font-weight:700;color:var(--blue);}
+.estoque-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.btn-add-estoque{padding:8px 13px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.estoque-item{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);padding:10px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);}
+.estoque-info{flex:1;min-width:0;}
+.estoque-nome{font-size:14px;font-weight:500;}
+.estoque-cat{font-size:11px;color:var(--muted);}
+.estoque-qty{font-size:16px;font-weight:700;color:var(--blue);flex-shrink:0;}
+.estoque-unit{font-size:11px;color:var(--muted);}
+.estoque-controles{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.btn-qty{width:26px;height:26px;border-radius:5px;border:1px solid var(--bdr);background:var(--surface2);color:var(--text2);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.btn-qty:hover{background:var(--blue-lt);border-color:#90caf9;color:var(--blue);}
+.qty-display{font-size:15px;font-weight:700;color:var(--blue);min-width:28px;text-align:center;}
+
+/* HISTÓRICO */
+.hist-header{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);padding:11px 13px;margin-bottom:10px;box-shadow:var(--shadow);}
+.hist-header-title{font-size:14px;font-weight:700;color:#5d4037;}
+.hist-header-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.hist-date-group{margin-bottom:16px;}
+.hist-date-label{font-size:12px;font-weight:700;color:#5d4037;padding:7px 0 5px;border-bottom:2px solid #d7ccc8;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.hist-date-badge{background:#efebe9;border:1px solid #d7ccc8;border-radius:5px;padding:2px 7px;font-size:10px;color:#5d4037;}
+.hist-entry{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--radius);padding:11px 13px;margin-bottom:6px;box-shadow:var(--shadow);}
+.hist-entry-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px;}
+.hist-loja-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;}
+.hist-entry-time{font-size:11px;color:var(--muted);flex:1;}
+.hist-entry-total{font-size:16px;font-weight:700;color:var(--green);}
+.hist-entry-sub{font-size:12px;color:var(--muted);}
+.hist-expand{font-size:11px;color:var(--green);cursor:pointer;margin-top:6px;font-weight:600;display:inline-block;}
+.hist-details{margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr);display:none;}
+.hist-details.open{display:block;}
+.hist-detail-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0;border-bottom:1px solid var(--bdr);}
+.hist-detail-row:last-child{border-bottom:none;}
+.hist-detail-name{flex:1;color:var(--text2);}
+.hist-detail-qty{color:var(--muted);margin:0 8px;font-size:11px;}
+.hist-detail-price{font-weight:600;color:var(--green);}
+
+/* MODAL EDITAR */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+.modal-box{background:var(--surface);border-radius:16px 16px 0 0;padding:16px;width:100%;max-width:600px;max-height:82vh;overflow-y:auto;box-shadow:0 -4px 20px rgba(0,0,0,.15);}
+.modal-title{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.modal-close{font-size:20px;cursor:pointer;color:var(--muted);line-height:1;}
+.modal-field{margin-bottom:12px;}
+.modal-field-row{display:flex;gap:10px;margin-bottom:12px;}
+.modal-field-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.modal-input{width:100%;padding:9px 11px;border:1px solid var(--bdr);border-radius:6px;font-family:'Inter',system-ui,sans-serif;font-size:14px;color:var(--text);background:var(--surface2);outline:none;transition:border-color .15s;}
+.modal-input:focus{border-color:var(--green-md);box-shadow:0 0 0 3px rgba(76,175,80,.1);}
+select.modal-input{cursor:pointer;}
+.modal-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.modal-cat-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:7px;cursor:pointer;border:1.5px solid var(--bdr);background:var(--surface2);transition:all .12s;}
+.modal-cat-item:hover{border-color:var(--green-md);}
+.modal-cat-item.selected{background:var(--green-lt);border-color:#a5d6a7;}
+.modal-cat-icon{font-size:16px;}
+.modal-cat-name{font-size:12px;font-weight:600;flex:1;}
+.modal-cat-check{font-size:12px;color:var(--green);font-weight:700;}
+.modal-actions{display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--bdr);}
+.modal-btn-save{flex:1;padding:11px;background:var(--green-btn);color:#fff;border:none;border-radius:8px;font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.modal-btn-cancel{padding:11px 16px;background:var(--surface2);color:var(--muted);border:1px solid var(--bdr);border-radius:8px;font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--text);color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:20px;z-index:999;transition:transform .28s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;box-shadow:var(--shadow-md);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.ok{background:var(--green-btn);}
+.toast.err{background:var(--red);}
+
+/* LOADER */
+.ldover{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:100;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+.ldover.show{display:flex;}
+.spinner{width:36px;height:36px;border:3px solid var(--bdr);border-top-color:var(--green-btn);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-text{font-size:14px;font-weight:600;color:var(--text2);}
+</style>
+</head>
+<body>
+<div class="sync-bar" id="syncBar"></div>
+<div class="hdr">
+  <div class="logo">🛒 ListaMercado</div>
+  <div class="wk"><span id="wkBadge"></span><span class="sync-dot" id="syncDot"></span></div>
+</div>
+<div class="tabs">
+  <div class="tab active" data-l="viena"   onclick="goTab('viena')">Viena <span class="badge" id="n-viena">0</span></div>
+  <div class="tab"        data-l="mirella" onclick="goTab('mirella')">Mirella <span class="badge" id="n-mirella">0</span></div>
+  <div class="tab"        data-l="montana" onclick="goTab('montana')">Montana <span class="badge" id="n-montana">0</span></div>
+  <div class="tab"        data-l="flash"   onclick="goTab('flash')">Flash <span class="badge" id="n-flash">0</span></div>
+  <div class="tab"        data-l="compras" onclick="goTab('compras')">🛒 Compras</div>
+  <div class="tab"        data-l="estoque" onclick="goTab('estoque')">📦 Estoque</div>
+  <div class="tab"        data-l="hist"    onclick="goTab('hist')">📋 Histórico</div>
+</div>
+<div class="main" id="main"></div>
+<div class="toast" id="toast"></div>
+<div class="ldover" id="loader"><div class="spinner"></div><div class="ld-text">Carregando...</div></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig={apiKey:"AIzaSyBUI2xQyLAPq1xg2JWgA9IMZ3Ht6idyZVo",authDomain:"listamercadinho.firebaseapp.com",projectId:"listamercadinho",storageBucket:"listamercadinho.firebasestorage.app",messagingSenderId:"30507783997",appId:"1:30507783997:web:9601531157a5b1cfebd754"};
+const db=getFirestore(initializeApp(firebaseConfig));
+const DOC=doc(db,'listamercado','dados');
+
+
+const PRODUCT_DB={"vinho reservado carmenere concha y toro 750ml":"Bebidas","vinho reservado chardonnay concha y toro 750ml":"Bebidas","vinho reservado malbec concha y toro 750ml":"Bebidas","vinho reservado sauvignon blanc 750ml":"Bebidas","vinho reservado sweet rose concha y toro 750ml":"Bebidas","coador 3 coração":"Mercearia","café 3 corações trad. 500g":"Padaria / Cereais","fita isolante 3m imperial 5m":"Limpeza","bolacha agua e sal adria 170g":"Padaria / Cereais","bolacha sal mant. adria 170g":"Padaria / Cereais","macarrão espaguete 8 adria 500g":"Mercearia","macarrao parafuso adria":"Mercearia","macarrão pena adria 500g":"Mercearia","temp. sazón carne ajinomoto 60g":"Mercearia","temp. sazón frango ajinomoto 60g":"Mercearia","vinho casal mendes vinho verde  750ml":"Bebidas","vinho quatro ventos douro  750ml":"Bebidas","gatorade  330ml":"Bebidas","gatorade maracujá 330ml":"Bebidas","pepsi black 2l":"Bebidas","caracu 350ml":"Bebidas","cerveja original 269ml":"Bebidas","spaten lata 350ml":"Bebidas","guaraná antartica 1l":"Bebidas","guaraná zero 350ml":"Bebidas","amstel larger lata 350ml":"Bebidas","marmita bobó de frango":"Congelados","marmita carreteira":"Congelados","marmita escondidinho de frango":"Congelados","marmita escondidinho de patinho":"Congelados","marmita espaguetti":"Congelados","marmita frango ao molho curry":"Congelados","marmita frango desfiado":"Congelados","marmita frango siciliano":"Congelados","marmita frango xadrez":"Congelados","marmita iscas de frango":"Congelados","marmita polenta com frango":"Congelados","marmita vaca atolada":"Congelados","azeite extra virgem andorinha 250ml":"Mercearia","tonica antartica 350ml":"Bebidas","guarana antartica 1 5l":"Bebidas","guarana antartica 2l":"Bebidas","guaraná antartica lata 350ml":"Bebidas","guarana antartica zero 2l":"Bebidas","algodão em rolo":"Higiene","bolacha triunfo agua e sal 164g":"Padaria / Cereais","bolacha triunfo cream cracker 164g":"Padaria / Cereais","molho de pimenta trad. arrifana 150ml":"Mercearia","lanche natural - frango":"Padaria / Cereais","lanche natural - peito de peru":"Padaria / Cereais","lanche natural - salame":"Padaria / Cereais","suco de uva integral - 1,5":"Bebidas","suco integral de uva - 200ml":"Bebidas","linguiça toscana aurora":"Congelados","pizza calabresa aurora 460g":"Congelados","pizza frango muss requeijão aurora":"Congelados","pizza mussarela aurora 440g":"Congelados","apresuntado aurora 180g":"Laticínios","presunto defumado aurora":"Laticínios","salame fatiado 100g":"Laticínios","manteiga aviaçao lata 200g":"Laticínios","doce de leite aviaçao 400g":"Mercearia","bacio de latte - doce de leite 490g":"Congelados","bacio di late - baunilha com doce de leite 490g":"Congelados","bacio di late - bombom caixinha 90g":"Congelados","bacio di late - bombom pote 144g":"Congelados","bacio di late - brownie 490g":"Congelados","bacio di late - caramelo salgado 490g":"Congelados","bacio di late - coco com leite 490g":"Congelados","bacio di latte - cocco al cioccolato 70g":"Congelados","bacio di latte 490ml - bacio di latte":"Congelados","chocolato belga 490ml - bacio di latte":"Congelados","chocolato belga 70g - bacio di latte":"Congelados","creme de leite cobertura belga 70g - bacio di latte":"Congelados","pistacchio 490ml - bacio di latte":"Congelados","pistacchio 70g - bacio di latte":"Congelados","stitch morango com leite 70g - bacio di latte":"Congelados","baer mate 269ml":"Bebidas","baer mate 350ml":"Bebidas","areia sanitária - 4kg":"Higiene","mel holanda - 270g":"Mercearia","supino - barra de fruta - banana e chocolate":"Doces e Sobremesas","macarrão penne barilla 500g":"Mercearia","macarrão spaguete 8 barilla 500g":"Mercearia","creamy chantilly":"Laticínios","manteiga batavo barra 200g":"Laticínios","biscoito biscuiti - meio amargo":"Padaria / Cereais","choco biscuit bauduco 80g":"Padaria / Cereais","cookies bauducco 60g":"Padaria / Cereais","cookies tradicional bauduco 100g":"Padaria / Cereais","koala bitter chocolate":"Padaria / Cereais","torrada - bauducco":"Padaria / Cereais","barrinha bauducco - chocolate":"Doces e Sobremesas","wafer avelã":"Doces e Sobremesas","torrada bauduco 284g":"Mercearia","chocottone bauducco 400g":"Padaria / Cereais","panettone bauducco 400g":"Padaria / Cereais","bolacha maisena bauduco 170g":"Padaria / Cereais","bolacha sal bauduco 200g":"Padaria / Cereais","cereal bauduco cacau e avelã 80g":"Padaria / Cereais","torrada bauduco 142g":"Padaria / Cereais","wafer bauduco choco":"Padaria / Cereais","roll bauduco 34g":"Doces e Sobremesas","pão de mel bauduco 30g":"Padaria / Cereais","biscoito integral - mel e gotas de cacau":"Padaria / Cereais","batata carinhas bem brasil 1,05kg":"Congelados","batata palito bem brasil 1,05kg":"Congelados","esponja esfre bom multiuso":"Limpeza","bolo ana maria cenoura com chocolate":"Padaria / Cereais","bolo ana maria creme de avelã":"Padaria / Cereais","takis fuego 56g":"Doces e Sobremesas","takis hot chilli 56g":"Doces e Sobremesas","takis xplosion 56g":"Doces e Sobremesas","bisnaguinha pullman 300g":"Padaria / Cereais","bolo ana maria gotas choc. 70g":"Padaria / Cereais","bolo chocolate 250/300g":"Padaria / Cereais","bolo laranja 250/300g":"Padaria / Cereais","pão de forma pullman trad. 480g":"Padaria / Cereais","pão de hamburger 420g":"Padaria / Cereais","pão frutas grãos e castanhas nutrella 500g":"Padaria / Cereais","pão pullman integral":"Padaria / Cereais","rap10 fibras 297g":"Padaria / Cereais","rap10 original 297g":"Padaria / Cereais","vinho pata negra oro blanc 750ml":"Bebidas","vinho pata negra oro rosé 750ml":"Bebidas","vinho pata negra oro tempranillo 750ml":"Bebidas","vinho d.v, catena cabernet malbec  750ml":"Bebidas","bold caramelo e amendoim 40g":"Doces e Sobremesas","bold trufa de chocolate 60g":"Doces e Sobremesas","esponja de aço bombril 8 unid":"Limpeza","limpol bombril 500ml":"Limpeza","assadeira de aluminio":"Limpeza","papel alumínio bompack 30cm x 4m":"Limpeza","brahma duplo malte lata 350ml":"Bebidas","sabão liquido brilhante 900ml":"Limpeza","budweiser 269ml":"Bebidas","budweiser 350ml":"Bebidas","budweiser zero 350ml":"Bebidas","arroz camil 1kg":"Mercearia","arroz integral camil 1kg":"Mercearia","feijão carioca camil 1kg":"Mercearia","feijão preto camil 1kg":"Mercearia","açucar refinado caravelas 1kg":"Mercearia","lanche natural carrefour":"Padaria / Cereais","limpador perfumado casa 500ml":"Limpeza","biscoito de polvilho salgado 100g":"Salgadinhos","vinagre alcool castelo 750ml":"Mercearia","vinagre de alcool castelo 750ml":"Mercearia","requeijão cremoso catupiry 200g":"Laticínios","requeijão cremoso catupiry light 200g":"Laticínios","molho pimenta cepera 150ml":"Mercearia","mostarda - cepera":"Mercearia","pimenta extra forte cepera 60ml":"Mercearia","imperio helles":"Bebidas","carmed agua de coco":"Higiene","carmed amora intensa":"Higiene","carmed amoras":"Higiene","carmed bff beijinho":"Higiene","carmed chocottone":"Higiene","carmed fini beijos":"Higiene","carmed fini minhocas":"Higiene","molho tomate passata cirio  1,02kg":"Mercearia","molho tomate passata cirio  700g":"Mercearia","sal grosso cisne 1kg":"Mercearia","sal refinado cisne 1kg":"Mercearia","club social original 144g":"Padaria / Cereais","club social original avulsa":"Padaria / Cereais","coala limpador perfumado 120ml":"Limpeza","agua aquissima c/ gás 500ml":"Bebidas","agua crystal 1,5l":"Bebidas","agua crystal 500ml":"Bebidas","agua crystal 5l":"Bebidas","agua crystal c/ gás 500ml":"Bebidas","agua crystal com gás 1,5l":"Bebidas","ice tea pessego 450ml":"Bebidas","monster - khaotic 473ml":"Bebidas","monster mango loco 473ml":"Bebidas","monster pacific punch - 473ml":"Bebidas","monster sem açucar":"Bebidas","monster the doctor473ml":"Bebidas","monster ultra violet - sem açucar - 473ml":"Bebidas","sprite - normal":"Bebidas","suco del valle goiaba s/ açucar 1l":"Bebidas","suco del valle laran/pesego 200ml":"Bebidas","suco del valle pessego s/ açucar 1l":"Bebidas","suco del valle uva 1l":"Bebidas","suco del valle uva s/ açucar 1l":"Bebidas","coca cola original 1l":"Bebidas","coca cola sem açucar 1l":"Bebidas","coca-cola lata 220ml":"Bebidas","coca-cola original 200ml":"Bebidas","coca-cola original 2l":"Bebidas","coca-cola original lata 350ml":"Bebidas","coca-cola sem açucar 2l":"Bebidas","coca-cola sem açucar lata 220ml":"Bebidas","coca-cola sem açucar lata 350ml":"Bebidas","fanta laranja 1,5l":"Bebidas","fanta laranja lata 350ml":"Bebidas","fanta uva lata 350ml":"Bebidas","schweppes citrus lata 350ml":"Bebidas","sprite 2l":"Bebidas","sprite sem açucar 350ml":"Bebidas","lenço umedecido cocoricó 50unidades":"Higiene","enxaguante bucal - 60ml":"Higiene","escova de dente média":"Higiene","fio dental colgate 50m":"Higiene","tandy pasta de dente":"Higiene","pinho sol desinfetante original":"Limpeza","copo descartável 180ml 100 unid.":"Limpeza","alcool coperalcool 500ml":"Limpeza","prato descartável 21cm - 10 unid.":"Limpeza","corona extra 330ml":"Bebidas","corona zero":"Bebidas","draft red line 600ml":"Bebidas","prato descartável 15cm - 10 unid.":"Limpeza","crocantiss churrasco 40g":"Salgadinhos","crocantiss peito de peru 40g":"Salgadinhos","crocantiss queijo e cebola 40g":"Salgadinhos","crocantiss salaminho com limão":"Salgadinhos","yopro danone 15g 250ml":"Bebidas","yorgute morango danone 1250g":"Bebidas","yorgute morango danone 150g":"Bebidas","danone natural integral 160g":"Laticínios","suco de pêssego delvalle - lata 290ml":"Bebidas","suco del valle laranja 1l":"Bebidas","suco del valle pessego 1l":"Bebidas","suco maracujá delvalle - lata 290ml":"Bebidas","suco uva delvalle - lata 290ml":"Bebidas","pão caseiro s/ gluten vegano 320g":"Padaria / Cereais","pudim - calda de caramelo":"Laticínios","gibi doces confirma 60g":"Doces e Sobremesas","pé de moleque doces confirma 60g":"Doces e Sobremesas","farinha de trigo trad. dona benta 1kg":"Mercearia","macarrão penne":"Mercearia","massa de bolo - cenoura":"Mercearia","mistura bolo choc. dona benta 450g":"Mercearia","mistura bolo coco. dona benta 450g":"Mercearia","mistura bolo laranja dona benta 450g":"Mercearia","amendoin japonês dori 90g":"Doces e Sobremesas","chocolate granulado dori 120g":"Mercearia","amendoin torrado lascas de alho dori":"Salgadinhos","pettiz amendoin":"Salgadinhos","doritos dinamita flamin'hot 60g":"Salgadinhos","doritos dinamita pimenta mexicana 60g":"Salgadinhos","doritos queijo nacho 75g":"Salgadinhos","amaciante downy 500ml":"Limpeza","chá cidreira":"Mercearia","fermento pó dr. oetker 100g":"Mercearia","agua de coco ducoco 200ml":"Mercearia","agua de coco ducoco blend 200ml":"Mercearia","coco ralado sococo adoçado 50g":"Mercearia","leite de coco 200ml":"Mercearia","pilha duracell - 4unidade":"Mercearia","pilha palito aaa - duracell":"Mercearia","guardanapo papel rolo eco bom":"Limpeza","extrato de tomate elefante 130g":"Mercearia","extrato de tomate elefante 300g":"Mercearia","pilha 2032":"Mercearia","pilha aa":"Mercearia","pilha aaa":"Mercearia","cheetos requeijão - 160g":"Doces e Sobremesas","salgadinho cebolitos":"Doces e Sobremesas","amendoin ovinhos elmachips 65g":"Salgadinhos","cebolitos 91g":"Salgadinhos","cebolitos elma chips 45g":"Salgadinhos","cheetos requeijão 40g":"Salgadinhos","cheetos requeijão 75g":"Salgadinhos","fandangos presunto 35g":"Salgadinhos","fandangos presunto 60g":"Salgadinhos","lays sour cream":"Salgadinhos","lays taco mexicano 62g":"Salgadinhos","ruffles original 33g":"Salgadinhos","ruffles original 68g":"Salgadinhos","torradinha panetini":"Padaria / Cereais","borracha acrilex":"Mercearia","borracha faber castel":"Mercearia","cola  bastao cis":"Mercearia","cola  bastao faber castel":"Mercearia","lapis preto faber castel":"Mercearia","bananada fazendinha":"Doces e Sobremesas","bananada fazendinha s/ açucar 23g":"Doces e Sobremesas","bombom ferrero rocher":"Doces e Sobremesas","fosforo fiat lux":"Limpeza","fini - azedinhos 80g":"Doces e Sobremesas","fini - beijos":"Doces e Sobremesas","fini - salada de frutas":"Doces e Sobremesas","fini camping 80g":"Doces e Sobremesas","fini dentaduras 15g":"Doces e Sobremesas","fini dentaduras 80g":"Doces e Sobremesas","fini minhocas 80g":"Doces e Sobremesas","fini minhocas azedinhas 80g":"Doces e Sobremesas","fini torçao 80g":"Doces e Sobremesas","fini tubes azedinhos mor e nata 15g":"Doces e Sobremesas","fini tubes morango e nata 15g":"Doces e Sobremesas","fini ursinhos 80g":"Doces e Sobremesas","carmed bff roso gliter":"Higiene","carmed fini dentaduras":"Higiene","carmed maça do amor":"Higiene","fita veda rosca":"Limpeza","manteiga extra com sal - 200g":"Laticínios","detergente minuano neutro 500ml":"Limpeza","pão de queijo air fryer waffle 200g":"Congelados","pão de queijo forno minas 400g":"Congelados","waffle trad. forno minas 280g":"Congelados","açai - split":"Congelados","azeite galo 250ml":"Mercearia","paçoca galvani 73g":"Doces e Sobremesas","baton chocolate ao leite - 16g":"Doces e Sobremesas","chocolate ao leite garoto":"Doces e Sobremesas","chocolate classic estle":"Doces e Sobremesas","chocolate talento - cereais e passas 85g":"Doces e Sobremesas","talento avelã diet 25g":"Doces e Sobremesas","talento avelãs - 25g":"Doces e Sobremesas","talento castanhas do pará 25g":"Doces e Sobremesas","talento cereais e passas 25g":"Doces e Sobremesas","gatorade laranja 330ml":"Bebidas","água com gás - minava":"Bebidas","coca cola zero 600ml":"Bebidas","vinho cordeiro con piel de lobo":"Bebidas","vinho d.v. catena chardonnay":"Bebidas","barra bold bombom crocante 14g/40g":"Doces e Sobremesas","barra bold cookies cream 14g/40g":"Doces e Sobremesas","barra bold doce de leite 14g/40g":"Doces e Sobremesas","barra bold pistache 14g/40g":"Doces e Sobremesas","barra proteina choco yopro":"Doces e Sobremesas","bold bombom crocante":"Doces e Sobremesas","bold doce de leite":"Doces e Sobremesas","yorgute morango zero danone":"Laticínios","detergente limpol":"Limpeza","sal refinado lebre - 1kg":"Mercearia","pilha aa philips":"Mercearia","pilha aaa philips":"Mercearia","coca-cola original 600ml":"Bebidas","frooty açaí":"Congelados","sorvete chicabon menos 800ml kibon":"Congelados","sorvete chicabon menos palito kibon":"Congelados","sorvete ovomaltine 800ml kibon":"Congelados","aparelho barbear gilette":"Higiene","aparelho depilar gilette":"Higiene","palito de dente gina 200u":"Mercearia","ebicen sabor cebola 30g":"Doces e Sobremesas","ebicen sabor camarão 30g":"Salgadinhos","colher sobremesa - 25uni":"Limpeza","atum 88 pedaços":"Mercearia","atum pedaços ao natural 170g":"Mercearia","atum pedaços em óleo 170g":"Mercearia","atum ralado natural gomes 170g":"Mercearia","atum sólido em óleo 170g":"Mercearia","sardinha com oleo 125g":"Mercearia","halls cereja 28g":"Doces e Sobremesas","halls melancia 28g":"Doces e Sobremesas","halls menta 28g":"Doces e Sobremesas","choop heineken 5l":"Bebidas","heineken lata 350ml 0.0":"Bebidas","heineken long neck 0.0":"Bebidas","heineken long neck 330ml":"Bebidas","heineken original lata 350ml":"Bebidas","ketchup heinz 260g":"Mercearia","ketchup heinz 397g":"Mercearia","ketchup heinz 567g":"Mercearia","molho de tomate trad. heinz 240g":"Mercearia","mostarda yellow heinz 255g":"Mercearia","ketchup hellmann´s 380g":"Mercearia","maionese hellmann´s":"Mercearia","maionese hellmann's 250g":"Mercearia","maionese hellmann's 500g":"Mercearia","mostarde hellmann's 170g":"Mercearia","chocolate ao leite hershey's":"Doces e Sobremesas","chocolate extra cremoso hershey's":"Doces e Sobremesas","chocolate ovomaltine hershey's":"Doces e Sobremesas","isqueiro":"Mercearia","lenço umidecido huggies 88 unid":"Higiene","stitch almond bolacha folhada com amendoa":"Padaria / Cereais","absorvente interno - o.b":"Higiene","mussarela zero lactose ipanema 150g":"Laticínios","mussarela fat italac150g":"Laticínios","leite italac desnatado 1l":"Mercearia","leite italac integral 1l":"Mercearia","leite italac semi 1l":"Mercearia","leite italac zero lactose 1l":"Mercearia","palito de dente fiat lux 240 und.":"Limpeza","cotonete johnson 75 und":"Higiene","listerine cool mint 250ml":"Higiene","sabonete amêndos johnson's 80g":"Higiene","sabonete lavanda - johnson's":"Higiene","shampoo johnson´s 200ml":"Higiene","baygon multi insetos 285ml":"Limpeza","baygon ultra 360ml":"Limpeza","pipicat areia gatos":"Higiene","sucrilhos kellogg's 110g":"Mercearia","sucrilhos kellogg's 240g":"Mercearia","chimichurri 15g":"Mercearia","molho de pimenta kisabor":"Mercearia","pimenta do reino preta em pó 40g":"Mercearia","brigadeiro kibon":"Congelados","chicabon - classico":"Congelados","corneto crocante":"Congelados","esk-bon mini doce de leite":"Congelados","eski-bon mini":"Congelados","magnum - classico":"Congelados","magnum avela":"Congelados","magnum branco":"Congelados","magnum cookies&cream":"Congelados","magnum pistage":"Congelados","sorvete chocolate kibon 1,5l":"Congelados","sorvete creme kibon 1,5l":"Congelados","sorvete flocos kibon 1,5l":"Congelados","sorvete frutilly morango":"Congelados","sorvete napolitano kibon 1,5l":"Congelados","sorvete palito - frutare coco":"Congelados","sorvete palito - frutare limão":"Congelados","sorvete palito - frutare uva":"Congelados","sorvete palito frutare - morango":"Congelados","tablito 3 chocolates 61g":"Congelados","tablito 59g":"Congelados","caneta azul":"Mercearia","caneta preta kilometrica":"Mercearia","caneta vermelha kilometrica":"Mercearia","kinder bueno 43g":"Doces e Sobremesas","kinder bueno white":"Doces e Sobremesas","temp. caldo carne knorr 114g":"Mercearia","temp. caldo carne knorr 57g":"Mercearia","temp. caldo galinha knorr 114g":"Mercearia","bicarbonato de sódio kisabor 60g":"Mercearia","orégano kisabor 8g":"Mercearia","bicarbonato de sódio kitano 80g":"Mercearia","canela em pó kitano":"Mercearia","chimichurri":"Mercearia","coloral kitano":"Mercearia","creme de cebola 65g":"Mercearia","orégano kitano":"Mercearia","tempero baiano 40g":"Mercearia","guardanapo papel kitchen 50 und.":"Limpeza","guardanapo papel rolo kitchen 120und":"Limpeza","temp. caldo galinha knorr 57g":"Mercearia","bis branco":"Doces e Sobremesas","bis original lacta 100,8g":"Doces e Sobremesas","bis xtra original 45g":"Doces e Sobremesas","caixa bombom lacta 250g":"Doces e Sobremesas","chocolate ao leite lacta 80g":"Doces e Sobremesas","chocolate ao leite oreo":"Doces e Sobremesas","chocolate diam negro lacta 80g":"Doces e Sobremesas","chocolate laka":"Doces e Sobremesas","chocolate laka diam negro lacta 80g":"Doces e Sobremesas","chocolate laka oreo":"Doces e Sobremesas","chocolate shot lacta 80g":"Doces e Sobremesas","chocolate sonho de valsa ouro br lacta 80g":"Doces e Sobremesas","chamyto":"Laticínios","sanol talco 2l":"Limpeza","chá matte leao 450ml":"Bebidas","chá leao - camomila":"Mercearia","chá leao - erva docê":"Mercearia","chá matte leao":"Mercearia","detergente limpol - 500ml":"Higiene","agua levissima 500ml":"Bebidas","agua levissima com gás 500ml":"Bebidas","agua levissima/lindoia 1,5l":"Bebidas","água lindóya 1,5l":"Bebidas","chocolate ao leite zero lactose linea sem açúcar 30g":"Doces e Sobremesas","linea branco s/ açúcar chocolate":"Doces e Sobremesas","linea chocolate s/ açúcar":"Doces e Sobremesas","óleo de soja lisa 900ml":"Mercearia","cappuccino - baunilha":"Bebidas","cappuccino - chocolate":"Bebidas","condicionador elseve":"Higiene","shampoo elseve 200ml":"Higiene","limpa vidro luar":"Limpeza","m&m's choco 40g":"Doces e Sobremesas","mel":"Mercearia","pipoca doce - 40g":"Doces e Sobremesas","maguary maracujá 200ml":"Bebidas","suco de maracuja maguary 1l":"Bebidas","suco de uva maguary 1l":"Bebidas","suco maguary laranja 200ml":"Bebidas","suco maguary uva 200ml":"Bebidas","amido de milho maizena 200g":"Mercearia","ovo happy eggs":"Mercearia","ovo jumbo":"Mercearia","ovo branco - extra cat. a - 10unid.":"Mercearia","flocao marata":"Mercearia","molho de pimenta - gota":"Mercearia","molho shoyuo150ml":"Mercearia","teens chocolate 30g":"Padaria / Cereais","teens - bauny":"Salgadinhos","m&m’s - 148g":"Doces e Sobremesas","m&m's chocolate":"Salgadinhos","saco de lixo 100l":"Limpeza","saco de lixo 30 litros":"Limpeza","ice tea limao 450ml":"Bebidas","ice tea limao zero 450ml":"Bebidas","batata frita mc cain 720g":"Congelados","batata frita mc cain air fryer 600":"Congelados","fio dental - 50m":"Higiene","saco lixo 60l 5 und":"Limpeza","coador 103 melitta 30 unid.":"Limpeza","café melita trad 500g":"Mercearia","café melitta trad. almofada 500g":"Mercearia","café soluvel mellita":"Mercearia","balas mentos - rainbow":"Doces e Sobremesas","chocolate milka - triple caramelo":"Doces e Sobremesas","milka - broken hazelnut":"Doces e Sobremesas","milka - kuhflecken":"Doces e Sobremesas","milka - oreo brownie":"Doces e Sobremesas","milka bubbly alpenmilch95g":"Doces e Sobremesas","milka bubbly white 95g":"Doces e Sobremesas","milka cremã cu cacao 100g":"Doces e Sobremesas","milka creme de avela 95g":"Doces e Sobremesas","milka dessert 100g":"Doces e Sobremesas","milka oreo 100g":"Doces e Sobremesas","milka strawberry 95g":"Doces e Sobremesas","milka wholenut 95g":"Doces e Sobremesas","agua minalba c/ gás 500ml":"Bebidas","água com gás - são lourenço":"Bebidas","água com gás são lourenço 1,26l":"Bebidas","bananinha vegana zero minnas 26g":"Doces e Sobremesas","mini oreo 35g":"Padaria / Cereais","trakinas chocolate 126g":"Padaria / Cereais","bombom ouro branco 20g":"Doces e Sobremesas","bombom sonho de valsa":"Doces e Sobremesas","chocolate amaro 40% lacta":"Doces e Sobremesas","chocolate milka - alpine milk 100g":"Doces e Sobremesas","mango loco 269ml":"Bebidas","monster":"Bebidas","monster 473ml":"Bebidas","monster pepeline punch - 473ml":"Bebidas","monster rio punch - 473ml":"Bebidas","monster ultra peachy keen - 473ml":"Bebidas","monster ultra strawberry  dreams - 473ml":"Bebidas","torrone com amendoim 45g":"Doces e Sobremesas","mupy maça 200ml":"Bebidas","suco de laranja - 300ml":"Bebidas","suco natural one":"Bebidas","suco natural one laranja/maça 180ml":"Bebidas","suco natural one uva180ml":"Bebidas","cafe soluvel nescafe":"Mercearia","capsula café nespresso":"Padaria / Cereais","achocolatado nescau 180ml":"Bebidas","achocolatado nescau 35% nemos açucar 180ml":"Bebidas","nescau original 350g":"Bebidas","água natural - nestlê 1,5l":"Bebidas","agua nestle 510ml":"Bebidas","biscoito negresco":"Padaria / Cereais","bolacha maisena tostines 200g":"Padaria / Cereais","bolacha nestle cookies 60g":"Padaria / Cereais","nesfit morango":"Padaria / Cereais","passa tempo chocolate 130g":"Padaria / Cereais","alpino nestle 85g":"Doces e Sobremesas","caixa de bombons nestle":"Doces e Sobremesas","cereal matinal - nescau":"Doces e Sobremesas","chocolate classic diet nestle 25g":"Doces e Sobremesas","chocolate nestle galak 80g":"Doces e Sobremesas","chocolate recheados - prestigio":"Doces e Sobremesas","kit-kat nestle 11,6g":"Doces e Sobremesas","kit-kat nestle 41,5g":"Doces e Sobremesas","nestle classic meio amargo 40% cacau 80g":"Doces e Sobremesas","prestigio 33g":"Doces e Sobremesas","suflair  50g":"Doces e Sobremesas","suflair duo nestle 80g":"Doces e Sobremesas","suflair nestle 80g":"Doces e Sobremesas","talento  meio amargo amendoas85g":"Doces e Sobremesas","talento avelãs 85g":"Doces e Sobremesas","talento castanha do pará 85g":"Doces e Sobremesas","iogurte morango nestle 1,25l":"Laticínios","iorgute morango nestle 170g":"Laticínios","aveia flocos finos nestle 170g":"Mercearia","chocolate padre 50%":"Mercearia","creme de leite 200g":"Mercearia","farinha lactea 210g":"Mercearia","leite condensado moça nestle 395g":"Mercearia","leite em pó integral inst ninho 380g":"Mercearia","leite moça lata 395g":"Mercearia","mucilon":"Mercearia","nescau ball 270g":"Mercearia","sucrilhos snow - 120g":"Mercearia","sorvete chocolate - nestle":"Congelados","sorvete creme nestle 1,5l":"Congelados","sorvete flocos tradicional 1,5l":"Congelados","sorvete napolitano flocos nestle 1,5l":"Congelados","sorvete napolitano nestle 1,5l":"Congelados","papel higiênico neve 4 und.":"Higiene","pano de chao":"Limpeza","cup noodles - queijo cheddar":"Mercearia","cup noodles 68g":"Mercearia","miojo nissin lámen carne 80g":"Mercearia","miojo nissin lámen galinha 80g":"Mercearia","miojo nissin lámen tomate 80g":"Mercearia","nissin u.f.o.":"Mercearia","desodorante nivea derma control 90":"Higiene","perfume men black&white nivea 150ml":"Higiene","perfume protect&care nivea 150ml":"Higiene","b-ready nutella 22g":"Doces e Sobremesas","nutella & go":"Doces e Sobremesas","creme de avelã nutella 140g":"Mercearia","creme de avelã - nutella":"Salgadinhos","nutri-vida gergilim int":"Padaria / Cereais","nutri-vida granola e passas int":"Padaria / Cereais","nutri-vida milho int":"Padaria / Cereais","pao vegano caseirinho":"Padaria / Cereais","barra de cereal - banana e mel - nutry":"Doces e Sobremesas","barra de cereal - morango com chocolate - nutry":"Doces e Sobremesas","barra de cereal - chocolate":"Doces e Sobremesas","pasta de amendoin - proteína 9g":"Doces e Sobremesas","whey barra proteina chocolate croc 50g":"Doces e Sobremesas","chá camomila dr. oetker 10g":"Mercearia","chá erva-doce dr. oetker 16g":"Mercearia","picolé de manga":"Congelados","picolé de morango":"Congelados","picole abacaxi ao vinho 60g":"Congelados","picole açai 60g":"Congelados","picole açai zero 57g":"Congelados","picole amendoin zero 57g":"Congelados","picole choco zero 57g":"Congelados","picole coco zero 57g":"Congelados","picole frutas vermelhas 60g":"Congelados","picole sensa chocomenta 70g":"Congelados","picole sensa meio amargo 70g":"Congelados","açai sabor banana oggi 180g":"Congelados","picolé chocolate oggi 60g":"Congelados","picolé doce de leite - 60g":"Congelados","picolé frutas vermelhas oggi 70g":"Congelados","picolé limao":"Congelados","picolé uva oggi 60g":"Congelados","sorvete class bombom no palito oggi":"Congelados","sorvete class brigadeiro oggi  62g":"Congelados","sorvete fazenda coco oggi 60g":"Congelados","sorvete fazenda milho verde oggi 60g":"Congelados","sorvete festa leite condensado oggi 60g":"Congelados","sorvete mikey":"Congelados","sorvete sensa bombom açai oggi 105g":"Congelados","sorvete sensa bombom oggi 105g":"Congelados","sorvete sensa brigadeiro - oggi":"Congelados","sorvete sensa chocolate branco oggi 70g":"Congelados","sorvete sensa doce de leite oggi 70g":"Congelados","sorvete stranger things":"Congelados","okf sparkling blueberry":"Bebidas","okf sparkling green apple":"Bebidas","okf sparkling tart cherry":"Bebidas","omo liquido lavagem perfeita 900ml":"Limpeza","sabao em pó - omo 400g":"Limpeza","sabão em pó omo lav perf 800g":"Limpeza","sabão em pó omo puro cuidado 800g":"Limpeza","lenços umedecidos pompom 46und.":"Higiene","creme dental oral b 4x1 70g":"Higiene","creme dental oral b menta 70g":"Higiene","escova dental oral b":"Higiene","absorvente always noturno 8 und.":"Higiene","lenço umidecido pampers 48 und.":"Higiene","pilha padrão aa - panassonic":"Mercearia","bebezinho laranja 70g":"Padaria / Cereais","bisnaguinha panco 300g":"Padaria / Cereais","bolo chocoboy300g":"Padaria / Cereais","bolo de milho c/erva doce 300g":"Padaria / Cereais","forma vida castanha do pará e quinoa":"Padaria / Cereais","forma vida maça, canela e castanha":"Padaria / Cereais","mini bolo red velvet 35g":"Padaria / Cereais","panetone chocotone 500g":"Padaria / Cereais","panetone frutas 500g":"Padaria / Cereais","panquito chocolate 70g":"Padaria / Cereais","panquito doce de leite 70g":"Padaria / Cereais","pão com coco 350g":"Padaria / Cereais","pão de forma panco 500g":"Padaria / Cereais","pão de forma panco jr. 350g":"Padaria / Cereais","pao de mel natural panco 500g":"Padaria / Cereais","pao de mel panco 200g":"Padaria / Cereais","pão de milho 500g":"Padaria / Cereais","pao forma cast-do-pará e linhaça panco":"Padaria / Cereais","pão forma integral panco":"Padaria / Cereais","pao forma vida 100% 380g":"Padaria / Cereais","pão sovado panco 500g":"Padaria / Cereais","condicionador pantene equilibrio":"Higiene","shampoo pantene equilibrio":"Higiene","feijão pantera 1kg":"Mercearia","pao divino 9 graos":"Padaria / Cereais","acendedor paraná":"Mercearia","leite parm. zymil desn. zero lactose 1l":"Mercearia","agua passa quatro 1l":"Bebidas","leite paulista integral 1l":"Mercearia","biscrok - pedigree":"Higiene","pedigree sache carne":"Higiene","pedigree sache frango":"Higiene","tasty bites - pedigree - 40g":"Higiene","refrigerante lata pepsi":"Bebidas","pepsi black":"Bebidas","pepsi black 1,5l":"Bebidas","doritos queijo nacho 32g":"Doces e Sobremesas","fofura cebola 35g":"Doces e Sobremesas","fofura cebola 60g":"Doces e Sobremesas","fofura churrasco 60g":"Doces e Sobremesas","h2o limão 500ml":"Bebidas","h2oh limoneto 500ml":"Bebidas","lays classica":"Salgadinhos","lays classica 115g":"Salgadinhos","lays rusticas creme chesse 68g":"Salgadinhos","lays rusticas sal marinho 68g":"Salgadinhos","lays sensaçao premium":"Salgadinhos","linguiça pernil na brasa perdigão":"Congelados","mini chiken perdigão 275g":"Congelados","mortadela defumada - perdigao":"Laticínios","lustra móveis peroba lavanda 200ml":"Limpeza","papel hig folha dupla personal 4 und":"Higiene","tapete higienico - clean pads":"Higiene","tapete fresh pads m":"Higiene","tapete fresh pads p":"Higiene","tapete super secão baby":"Higiene","pro force 15g zero latco 250ml":"Bebidas","arroz prato fino branco 1kg":"Mercearia","cookies - chocolate":"Padaria / Cereais","requeijão tradicional - poços de caldas - 200g":"Laticínios","molho tomate trad. pomarola 300g":"Mercearia","garfo sobremesa branco 50 unidades":"Limpeza","arroz prato fino integral 1kg":"Mercearia","ervilha predilecta lata 280g":"Mercearia","milho predilecta 280g":"Mercearia","cookie - premier":"Higiene","manteiga presidente barra 200g":"Laticínios","mussarela fat president / sadia 150g":"Laticínios","pringles churrasco 109g":"Salgadinhos","pringles/ruff original 104g":"Salgadinhos","pringles/ruffl creme e cebola 109g":"Salgadinhos","pão artesanale":"Padaria / Cereais","bifinho - doguitos":"Higiene","friskies sache carne":"Higiene","friskies sache cordeiro":"Higiene","linguicinha - doguitos":"Higiene","agua de coco 1l":"Bebidas","adoçante zero-cal gotas 100ml":"Mercearia","aveia integ flocos finos quaker 165g":"Mercearia","milharina quaker 500g":"Mercearia","margarina c/ sal quali 500g":"Laticínios","margarina quali 250g":"Laticínios","margarina qualy - com sal 250g":"Laticínios","vela queluz n5":"Limpeza","ervilha quero lata":"Mercearia","ketchup quero 200g":"Mercearia","ketchup quero 400g":"Mercearia","milho verde quero lata 280g":"Mercearia","azeitona - raiola":"Mercearia","energético redbull lata 250ml":"Bebidas","redbull sugarfree 250ml":"Bebidas","macarrão spaguete 8 renata 500g":"Mercearia","sulfite seninha report":"Mercearia","vinho reservado - cabernet":"Bebidas","fermento pó royal 100g":"Mercearia","pão de queijo sabor & minas 400g":"Congelados","hamburger sadia churras":"Congelados","hot pocket - picanha":"Congelados","lasanha peito de peru":"Congelados","lasanha sadia 600g":"Congelados","pizza 4 queijos":"Congelados","pizza calabresa sadia 460g":"Congelados","pizza frango com requeijão e mussarela sadia 460g":"Congelados","pizza lombo req mussar sadia":"Congelados","pizza mussarela sadia 440g":"Congelados","torta frango  requeijao sadia 500g":"Congelados","mortadela defumada sadia":"Laticínios","presunto fatiado":"Laticínios","presunto fatiado seara":"Laticínios","salamitos lemonástico sadia":"Salgadinhos","molho tarê":"Mercearia","espumante salton moscatel 750ml":"Bebidas","vinho branco esp natural brut 660ml":"Bebidas","vinho moscatel esp rose 660ml":"Bebidas","marlboro blue selection":"Mercearia","marlboro blue selection maço":"Mercearia","marlboro gold":"Mercearia","marlboro gold box":"Mercearia","marlboro gold selection":"Mercearia","marlboro ice brust":"Mercearia","marlboro red box":"Mercearia","marlboro red selection":"Mercearia","paçoquita santa helena 18g":"Doces e Sobremesas","paçoquita zero santa helena 18g":"Doces e Sobremesas","ovos santa marta 10 unidades":"Mercearia","ovos vermelhos duzia":"Mercearia","refrigerante schweppes citrus":"Bebidas","frango a passarinho seara 1kg":"Congelados","peito de peru seara":"Laticínios","absorvente adapt com abas sempre livre 8 und.":"Higiene","ob sempre livre 10und.":"Higiene","sempre livre noturno 8 und.":"Higiene","pão de forma sevenboys 450g":"Padaria / Cereais","smirnoff ice 275ml":"Bebidas","snickers":"Salgadinhos","snickers - dark":"Salgadinhos","snickers branco":"Salgadinhos","coco ralado sococo 50g":"Mercearia","creme dental - sorriso":"Higiene","dunhill carlton blend":"Mercearia","dunhill insignia red":"Mercearia","óleo de soja soya 900ml":"Mercearia","spalten minich 269ml":"Bebidas","frappuccino - café clássico 280ml":"Bebidas","frappuccino - café mocha 280ml":"Bebidas","frappuccino - sabor caramelo 280ml":"Bebidas","stella artois long neck 330ml":"Bebidas","garfo sobremesa - 50uni":"Limpeza","carvão 2kg":"Mercearia","agua sanitaria suprema 1l":"Limpeza","abacaxi em cubos congelado":"Congelados","almondegas bovina - swift":"Congelados","batata noisette - 400g":"Congelados","batata palito trad. 400g":"Congelados","carne moida swift 500g":"Congelados","filesinho sassami swift 1kg":"Congelados","filezinho sassami swift 1kg":"Congelados","frutas vermelhas congelado":"Congelados","gelo 5kg":"Congelados","isca de frango swift 300g":"Congelados","linguiça toscana - swift":"Congelados","mandioca congelada swift 600g":"Congelados","morango congelado":"Congelados","nuggets swift 300g":"Congelados","pão de queijo  coquetel swift 400g":"Congelados","petit gateau - chocolate":"Congelados","petit gateau - havanna":"Congelados","polenta palito swift 600g":"Congelados","alcool gel acendedor":"Mercearia","pão frances congelado - swift":"Padaria / Cereais","mousse chocolate 80g":"Congelados","mousse limao 80g":"Congelados","muffin red velvet":"Congelados","cola instantanea tek bond":"Mercearia","tapioca da terrinha 500g":"Mercearia","hamburger texas 672g":"Congelados","tic tac laranja 14,5g":"Doces e Sobremesas","tic tac menta 14,5g":"Doces e Sobremesas","azeitona fatiada ting 320g":"Mercearia","requeijão tiroles 200g":"Laticínios","tnuva chocolate com cramberry":"Doces e Sobremesas","tnuva chocolate com pistache":"Doces e Sobremesas","toddy original 370g":"Bebidas","toddynho 200ml":"Bebidas","vela estrelinha 4 unid.":"Limpeza","torcida cebola 35g":"Salgadinhos","torcida cebola 60g":"Salgadinhos","torcida churrasco 60g":"Salgadinhos","trakinas chocolate  42g":"Padaria / Cereais","trakinas meio a meio 126g":"Padaria / Cereais","trakinas morango 126g":"Padaria / Cereais","trakinas morango 42g":"Padaria / Cereais","trento avelã":"Doces e Sobremesas","trento branco":"Doces e Sobremesas","trento chocolate":"Doces e Sobremesas","trento dark 29g":"Doces e Sobremesas","trident hortelã":"Doces e Sobremesas","trident melancia 8g":"Doces e Sobremesas","trident menta 8g":"Doces e Sobremesas","trident morango 8g":"Doces e Sobremesas","trident tuti-fruit 8g":"Doces e Sobremesas","trident xsense intense 8g":"Doces e Sobremesas","álcool  1l":"Limpeza","twix 15g":"Doces e Sobremesas","açucar refinado união 1kg":"Mercearia","creme dental closeup menta americana":"Higiene","cif cremoso 250ml":"Limpeza","sabonete dove original":"Mercearia","veja multiuso 500ml":"Limpeza","veja perfume lavanda":"Limpeza","vinho chilano carbenet sauvignon":"Bebidas","vinho chilano carménère 750ml":"Bebidas","vinho chilano merlot 750ml":"Bebidas","vinho chilano moscato":"Bebidas","vinho chilano red blend 750ml":"Bebidas","vinho chilano rose 750ml":"Bebidas","requeijão tradicional - vigor 200g":"Laticínios","queijo ralado parmesão 50g":"Mercearia","sachê whiskas - gato castrado":"Higiene","whiskas sache atum":"Higiene","whiskas sache carne":"Higiene","whiskas sache salmao":"Higiene","wrap integral wickbold 270g":"Mercearia","pão cast-do-pará e quinoa wick 350g":"Padaria / Cereais","wickbold 5 zeros":"Padaria / Cereais","papel aluminio - wyda":"Limpeza","plastico filme wida":"Limpeza","suco de maça yakut":"Bebidas","pipoca mant de cinema yoki 100g":"Doces e Sobremesas","farinha de rosca yoki - 500g":"Mercearia","farofa mandioca trad. yoki 400g":"Mercearia","flocao milho 500g":"Mercearia","milho para pipoca yoki 400g":"Mercearia","amendoim descascado yoki 150g":"Salgadinhos","amendoim japonês yoki":"Salgadinhos","batata palha trad. yoki":"Salgadinhos","agua sanitária ype 1l":"Limpeza","detergente ype 500ml":"Limpeza","detergente ype limão 500ml":"Limpeza","esponja lava-louças ype 4 unid":"Limpeza","pincel atômico":"Limpeza","sabão em pedra neutro ype 180g":"Limpeza","vinho toro cabernet suavignon 750ml":"Bebidas","vinho toro chardonnay 750ml":"Bebidas","vinho toro malbec 750ml":"Bebidas","vinho toro rosé 750ml":"Bebidas","acetona 90ml":"Higiene"};
+
+// ── CATEGORIAS DO APP ──
+const CATS={
+  "Bebidas":           {icon:"🥤",cor:"#0288d1"},
+  "Laticínios":        {icon:"🧀",cor:"#f9a825"},
+  "Padaria / Cereais": {icon:"🍞",cor:"#ef6c00"},
+  "Carnes e Proteínas":{icon:"🥩",cor:"#c62828"},
+  "Hortifruti":        {icon:"🥦",cor:"#2e7d32"},
+  "Congelados":        {icon:"❄️",cor:"#7b1fa2"},
+  "Limpeza":           {icon:"🧹",cor:"#00838f"},
+  "Higiene":           {icon:"🧴",cor:"#0277bd"},
+  "Salgadinhos":       {icon:"🍿",cor:"#ff8f00"},
+  "Doces e Sobremesas":{icon:"🍫",cor:"#ad1457"},
+  "Mercearia":         {icon:"🏪",cor:"#546e7a"},
+};
+
+// ── BUSCA NO BANCO DE PRODUTOS ──
+function getCatFromDB(digitado){
+  const d=digitado.toLowerCase().trim();
+  // 1. Exata
+  if(PRODUCT_DB[d])return PRODUCT_DB[d];
+  // 2. O digitado contido em algum nome do banco
+  for(const[nome,cat]of Object.entries(PRODUCT_DB)){
+    if(nome.includes(d))return cat;
+  }
+  // 3. Palavras do digitado encontradas no banco (score)
+  const palavras=d.split(/\s+/).filter(p=>p.length>3);
+  if(palavras.length){
+    let melhor=null,melhorScore=0;
+    for(const[nome,cat]of Object.entries(PRODUCT_DB)){
+      const score=palavras.reduce((a,p)=>a+(nome.includes(p)?1:0),0);
+      if(score>melhorScore){melhorScore=score;melhor=cat;}
+    }
+    if(melhor&&melhorScore>0)return melhor;
+  }
+  return 'Mercearia';
+}
+
+// ── PARSER ──
+const UNITS=["kg","g","ml","l","lt","cx","pct","dz","un","gr","lata","pacote","caixa","duzia","garrafa","litro","litros"];
+function parseQty(t){return parseFloat(t.replace(',','.'))||0;}
+function parseUnit(t){
+  const l=t.toLowerCase().replace('.','');
+  const m={lt:'L',litro:'L',litros:'L',l:'L',gr:'g',grama:'g',gramas:'g',pacote:'pct',caixa:'cx',duzia:'dz',garrafa:'un',lata:'un'};
+  return m[l]||(UNITS.includes(l)?l:null);
+}
+function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase();}
+function normalizeName(raw){
+  // Preserva o nome exato — só capitaliza primeira letra de cada palavra
+  return raw.trim().split(' ').filter(Boolean).map((w,i)=>i===0?capitalize(w):w).join(' ');
+}
+function parseList(text){
+  const results=[];
+  const chunks=text.split(/[,;\n]+/).map(c=>c.trim()).filter(Boolean);
+  for(const chunk of chunks){
+    const tokens=chunk.trim().split(/\s+/);
+    let qty=1,unit='un',nameParts=[],i=0;
+    if(tokens[0]&&/^\d+[,.]?\d*$/.test(tokens[0])){
+      qty=parseQty(tokens[0]);i=1;
+      if(tokens[1]){const u=parseUnit(tokens[1]);if(u){unit=u;i=2;}}
+      nameParts=tokens.slice(i);
+    }else{
+      let qi=-1;
+      for(let j=tokens.length-1;j>=0;j--){if(/^\d+[,.]?\d*$/.test(tokens[j])){qi=j;break;}}
+      if(qi>=0){
+        qty=parseQty(tokens[qi]);
+        let ai=qi+1;
+        if(tokens[ai]){const u=parseUnit(tokens[ai]);if(u){unit=u;ai++;}}
+        const s=tokens[qi].match(/^(\d+[,.]?\d*)(kg|g|ml|l|lt|un|cx|pct|gr)$/i);
+        if(s){qty=parseQty(s[1]);unit=parseUnit(s[2])||s[2];}
+        nameParts=[...tokens.slice(0,qi),...tokens.slice(ai)];
+      }else{
+        const si=tokens.findIndex(t=>/^\d+[,.]?\d*(kg|g|ml|l|lt|un|cx|pct|gr)$/i.test(t));
+        if(si>=0){const s=tokens[si].match(/^(\d+[,.]?\d*)(kg|g|ml|l|lt|un|cx|pct|gr)$/i);qty=parseQty(s[1]);unit=parseUnit(s[2])||s[2];nameParts=tokens.filter((_,j)=>j!==si);}
+        else nameParts=tokens;
+      }
+    }
+    const rawName=nameParts.join(' ').replace(/^-+|-+$/g,'').trim();
+    if(!rawName||rawName.length<2)continue;
+    // Preserva o nome como digitado, só capitaliza primeira letra
+    const nome=normalizeName(rawName);
+    if(!nome||nome.length<2)continue;
+    results.push({nome,qtd:qty||1,unidade:unit});
+  }
+  return results;
+}
+
+// ── CONSOLIDAÇÃO ──
+function consolidarLocalmente(){
+  const todos=[];
+  LOJAS.forEach(l=>estado[l].forEach(item=>todos.push({...item,loja:l})));
+  if(!todos.length)return[];
+  const grupos={};
+  todos.forEach(item=>{
+    const key=item.nome.toLowerCase().trim()+'|'+item.unidade;
+    if(!grupos[key])grupos[key]={nome:item.nome,categoria:item.categoria||'Mercearia',unidade:item.unidade,total:0,lojas:{viena:0,mirella:0,montana:0,flash:0}};
+    grupos[key].total+=item.qtd;
+    grupos[key].lojas[item.loja]=(grupos[key].lojas[item.loja]||0)+item.qtd;
+  });
+  const catOrder=Object.keys(CATS);
+  return Object.values(grupos).sort((a,b)=>{
+    const ci=catOrder.indexOf(a.categoria)-catOrder.indexOf(b.categoria);
+    return ci!==0?ci:a.nome.localeCompare(b.nome,'pt-BR');
+  });
+}
+
+function sortItems(items){
+  const catOrder=Object.keys(CATS);
+  return[...items].sort((a,b)=>{
+    const ci=catOrder.indexOf(a.categoria||'Mercearia')-catOrder.indexOf(b.categoria||'Mercearia');
+    return ci!==0?ci:a.nome.localeCompare(b.nome,'pt-BR');
+  });
+}
+
+// ── ESTADO ──
+const LOJAS=['viena','mirella','montana','flash'];
+const LNOMES={viena:'Viena',mirella:'Mirella',montana:'Montana',flash:'Flash'};
+const LCORES={viena:'var(--viena)',mirella:'var(--mirella)',montana:'var(--montana)',flash:'var(--flash)'};
+const LBGS={viena:'var(--viena-lt)',mirella:'var(--mirella-lt)',montana:'var(--montana-lt)',flash:'var(--flash-lt)'};
+
+let estado={viena:[],mirella:[],montana:[],flash:[]};
+let aba='viena';
+let consolidado=[];
+let checklist={};
+let previewItems=[];
+let draftTexts={viena:'',mirella:'',montana:'',flash:''};
+let historico=[];
+let estoque=[];
+let isSaving=false;
+
+// ── SYNC STATUS ──
+function setSyncStatus(s){
+  const bar=document.getElementById('syncBar');
+  const dot=document.getElementById('syncDot');
+  if(!bar||!dot)return;
+  bar.className='sync-bar '+(s==='syncing'?'syncing':s==='error'?'error':'');
+  dot.className='sync-dot '+(s==='syncing'?'syncing':s==='error'?'offline':'');
+}
+
+// ── FIREBASE SAVE ──
+let saveTimer=null;
+function salvar(immediate=false){
+  if(saveTimer)clearTimeout(saveTimer);
+  if(immediate){_doSave();}else{saveTimer=setTimeout(_doSave,500);}
+}
+async function _doSave(){
+  if(isSaving)return;
+  isSaving=true;setSyncStatus('syncing');
+  try{
+    await setDoc(DOC,{estado,consolidado,checklist,draftTexts,historico,estoque,updatedAt:Date.now()});
+    setSyncStatus('ok');
+  }catch(e){
+    console.error(e);setSyncStatus('error');
+    try{localStorage.setItem('lm6_bk',JSON.stringify({estado,consolidado,checklist,draftTexts,historico,estoque}));}catch(_){}
+  }finally{isSaving=false;}
+}
+
+function iniciarSync(){
+  setSyncStatus('syncing');showLoader(true);
+  onSnapshot(DOC,(snap)=>{
+    showLoader(false);
+    if(snap.exists()){
+      const d=snap.data();
+      LOJAS.forEach(l=>{
+        if(Array.isArray(d.estado?.[l]))estado[l]=d.estado[l];
+        if(typeof d.draftTexts?.[l]==='string')draftTexts[l]=d.draftTexts[l];
+      });
+      if(Array.isArray(d.consolidado))consolidado=d.consolidado;
+      if(d.checklist&&typeof d.checklist==='object')checklist=d.checklist;
+      if(Array.isArray(d.historico))historico=d.historico;
+      if(Array.isArray(d.estoque))estoque=d.estoque;
+    }
+    setSyncStatus('ok');updateBadges();render();
+  },(err)=>{
+    console.error(err);setSyncStatus('error');showLoader(false);
+    try{
+      const s=localStorage.getItem('lm6_bk');
+      if(s){const d=JSON.parse(s);LOJAS.forEach(l=>{if(Array.isArray(d.estado?.[l]))estado[l]=d.estado[l];});if(Array.isArray(d.consolidado))consolidado=d.consolidado;if(d.checklist)checklist=d.checklist;if(Array.isArray(d.historico))historico=d.historico;if(Array.isArray(d.estoque))estoque=d.estoque;}
+    }catch(_){}
+    updateBadges();render();
+  });
+}
+
+// ── TABS ──
+function goTab(l){
+  if(LOJAS.includes(aba)){const el=document.getElementById('chatInput');if(el)draftTexts[aba]=el.value;}
+  if(previewItems.length&&LOJAS.includes(aba))autoConfirmarPreview(aba);
+  aba=l;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.l===l));
+  render();
+}
+function autoConfirmarPreview(loja){
+  previewItems.forEach(item=>{
+    const idx=estado[loja].findIndex(e=>e.nome.toLowerCase().trim()===item.nome.toLowerCase().trim()&&e.unidade===item.unidade);
+    if(idx>=0)estado[loja][idx].qtd+=item.qtd;
+    else estado[loja].push({...item});
+  });
+  previewItems=[];salvar();updateBadges();
+}
+function updateBadges(){
+  LOJAS.forEach(l=>{const el=document.getElementById('n-'+l);if(el)el.textContent=estado[l].length;});
+}
+
+// ── RENDER ──
+function render(){
+  const m=document.getElementById('main');if(!m)return;
+  if(aba==='compras'){renderCompras(m);return;}
+  if(aba==='estoque'){renderEstoque(m);return;}
+  if(aba==='hist'){renderHist(m);return;}
+  renderLoja(m,aba);
+}
+
+// ── RENDER LOJA ──
+function renderLoja(m,loja){
+  const allItems=estado[loja];
+  const cor=LCORES[loja];
+  const q=document.getElementById('search-'+loja)?.value||'';
+  const items=q?sortItems(allItems).filter(it=>it.nome.toLowerCase().includes(q.toLowerCase())):sortItems(allItems);
+
+  let html=`
+  <div class="inp-box">
+    <div class="inp-top-bar" style="background:${cor}"></div>
+    <div class="inp-body">
+      <div class="inp-label">📝 Adicionar — ${LNOMES[loja]}</div>
+      <textarea class="chat" id="chatInput" placeholder="Ex: macarrão 3, arroz 2kg, refri 2L 6..." rows="3" onkeydown="handleKey(event)" oninput="saveDraft('${loja}')"></textarea>
+      <div class="hint">Separe por vírgula. <b>Nome preservado, categoria automática pelo banco de produtos.</b></div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="processarInput()">+ Adicionar à Lista</button></div>
+      ${previewItems.length?renderPreview(loja):''}
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input id="search-${loja}" class="search-input" type="text" placeholder="Pesquisar na lista ${LNOMES[loja]}..." value="${q}" oninput="filtrarLoja('${loja}',this.value)">
+    ${q?`<span class="search-clear" onclick="limparBusca('${loja}')">✕</span>`:''}
+  </div>
+
+  <div class="sec-title">Itens da lista <span class="sec-count">${q?items.length+' de '+allItems.length:allItems.length+' produto'+(allItems.length!==1?'s':'')}</span></div>
+  <div id="items-${loja}">`;
+
+  if(allItems.length===0){
+    html+=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nenhum item ainda.<br>Use o campo acima para adicionar.</div></div>`;
+  }else if(items.length===0){
+    html+=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum resultado para "<b>${q}</b>".</div></div>`;
+  }else{
+    const byCat={};
+    items.forEach(item=>{const cat=item.categoria||'Mercearia';if(!byCat[cat])byCat[cat]=[];byCat[cat].push(item);});
+    const catOrder=Object.keys(CATS);
+    Object.keys(byCat).sort((a,b)=>catOrder.indexOf(a)-catOrder.indexOf(b)).forEach(cat=>{
+      const cd=CATS[cat]||{icon:'🏪',cor:'#546e7a'};
+      html+=`<div class="cat-section"><div class="cat-header"><div class="cat-icon">${cd.icon}</div><div class="cat-name">${cat}</div><div class="cat-count">${byCat[cat].length}</div></div>`;
+      byCat[cat].forEach(item=>{
+        const origIdx=allItems.findIndex(e=>e.nome===item.nome&&e.unidade===item.unidade);
+        html+=`<div class="icard">
+          <div class="icat-dot" style="background:${cd.cor}"></div>
+          <div class="iinfo"><div class="iname">${item.nome}</div><div class="icat-label">${cd.icon} ${cat}</div></div>
+          <div class="iqty" style="color:${cor};flex-shrink:0">${item.qtd}<span class="iunit"> ${item.unidade||'un'}</span></div>
+          <button class="btn-edit" onclick="abrirEditarItem('${loja}',${origIdx})" title="Editar">✎</button>
+          <button class="btn-rm" onclick="remItem('${loja}',${origIdx})">✕</button>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+  }
+  html+=`</div>`;
+  if(allItems.length>0)html+=`<button class="btn-limpar-tudo" onclick="limparLoja('${loja}')">🗑 Limpar lista toda (${allItems.length} ${allItems.length===1?'item':'itens'})</button>`;
+
+  m.innerHTML=html;
+  const ta=document.getElementById('chatInput');
+  if(ta&&draftTexts[loja])ta.value=draftTexts[loja];
+  if(previewItems.length)bindPreviewRm();
+}
+
+function renderPreview(loja){
+  return`<div class="preview-box">
+    <div class="preview-title">✓ Confirmar itens — verifique as categorias</div>
+    ${previewItems.map((it,i)=>`<div class="preview-item" id="prev-${i}">
+      <span class="prev-name">${it.nome}</span>
+      <span style="font-size:11px;color:var(--green);margin-left:4px;">${CATS[it.categoria]?.icon||'🏪'} ${it.categoria}</span>
+      <span class="prev-qty" style="margin-left:auto">${it.qtd}</span>
+      <span class="prev-unit">${it.unidade}</span>
+      <button class="prev-rm" data-i="${i}">✕</button>
+    </div>`).join('')}
+    <div class="preview-actions">
+      <button class="btn-confirm" onclick="confirmarPreview('${loja}')">✓ Confirmar todos</button>
+      <button class="btn-cancel" onclick="cancelarPreview()">Cancelar</button>
+    </div>
+  </div>`;
+}
+function bindPreviewRm(){document.querySelectorAll('.prev-rm').forEach(btn=>{btn.onclick=()=>{previewItems.splice(parseInt(btn.dataset.i),1);render();};});}
+
+// ── RENDER COMPRAS (consolidado + check + preço) ──
+function renderCompras(m){
+  const total=LOJAS.reduce((a,l)=>a+estado[l].length,0);
+  const done=consolidado.filter((_,i)=>checklist[i]?.checked).length;
+  const pct=consolidado.length?Math.round(done/consolidado.length*100):0;
+  let totalGasto=0;
+  consolidado.forEach((_,i)=>{const p=checklist[i]?.preco||0;totalGasto+=p*consolidado[i].total;});
+
+  const q=document.getElementById('search-compras')?.value||'';
+
+  let html=`
+  <div class="compras-header">
+    <div class="compras-header-left">
+      <strong>🛒 Compras</strong>
+      <span>${LOJAS.filter(l=>estado[l].length>0).length} loja(s) · ${total} itens cadastrados</span>
+    </div>
+    <button class="btn-atualizar" onclick="gerarConsolidado()">↻ Atualizar</button>
+  </div>`;
+
+  if(!consolidado.length&&total===0){
+    m.innerHTML=html+`<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Adicione itens nas lojas primeiro,<br>depois clique em Atualizar.</div></div>`;
+    return;
+  }
+  if(!consolidado.length){
+    m.innerHTML=html+`<div class="empty"><div class="empty-icon">⚡</div><div class="empty-text">Clique em <b>↻ Atualizar</b> para gerar<br>a lista consolidada.</div></div>`;
+    return;
+  }
+
+  html+=`
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:${pct}%"></div></div>
+  <div class="total-box">
+    <div class="total-label">💰 Total estimado:</div>
+    <div class="total-val" id="total-val">R$ ${totalGasto.toFixed(2).replace('.',',')}</div>
+  </div>
+
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input id="search-compras" class="search-input" type="text" placeholder="Pesquisar produto..." value="${q}" oninput="filtrarCompras(this.value)">
+    ${q?`<span class="search-clear" onclick="limparBuscaCompras()">✕</span>`:''}
+  </div>`;
+
+  const filtered=q?consolidado.filter(it=>it.nome.toLowerCase().includes(q.toLowerCase())):consolidado;
+
+  if(filtered.length===0){
+    html+=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum resultado para "<b>${q}</b>".</div></div>`;
+  }else{
+    const byCat={};
+    filtered.forEach((it,_)=>{
+      const realIdx=consolidado.indexOf(it);
+      if(!byCat[it.categoria])byCat[it.categoria]=[];
+      byCat[it.categoria].push({...it,idx:realIdx});
+    });
+    const catOrder=Object.keys(CATS);
+    Object.keys(byCat).sort((a,b)=>catOrder.indexOf(a)-catOrder.indexOf(b)).forEach(cat=>{
+      const cd=CATS[cat]||{icon:'🏪'};
+      html+=`<div class="cat-section"><div class="cat-header"><div class="cat-icon">${cd.icon}</div><div class="cat-name">${cat}</div><div class="cat-count">${byCat[cat].length}</div></div>`;
+      byCat[cat].forEach(it=>{
+        const got=!!checklist[it.idx]?.checked;
+        const preco=checklist[it.idx]?.preco||'';
+        const sub=preco&&it.total?(preco*it.total).toFixed(2).replace('.',','):'';
+        const chips=LOJAS.filter(l=>it.lojas[l]>0).map(l=>`<div class="chip" data-l="${l}">${LNOMES[l]}: ${it.lojas[l]}</div>`).join('');
+        html+=`<div class="citem ${got?'got':''}" id="ci-${it.idx}">
+          <div class="citem-top" onclick="toggleCheck(${it.idx})">
+            <div class="check-circle">${got?'✓':''}</div>
+            <div class="citem-name">${it.nome}</div>
+            <span class="citem-total">${it.total}</span><span class="citem-unit"> ${it.unidade}</span>
+          </div>
+          <div class="citem-bottom">
+            <div class="chips">${chips}</div>
+            <div class="price-inline">
+              <span class="price-curr">R$</span>
+              <input class="price-inp" type="number" step="0.01" min="0" placeholder="0,00"
+                value="${preco}" id="pi-${it.idx}"
+                onchange="updatePreco(${it.idx},this.value)"
+                oninput="updatePreco(${it.idx},this.value)">
+              <div class="price-sub" id="sub-${it.idx}">${sub?'= R$ '+sub:''}</div>
+            </div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+  }
+
+  if(done===consolidado.length&&consolidado.length>0)html+=`<div class="done-banner">🎉 Tudo comprado! Total: R$ ${totalGasto.toFixed(2).replace('.',',')}</div>`;
+  html+=`
+  <div class="exp-bar">
+    <button class="btn-exp" onclick="copiarLista()">📋 Copiar</button>
+    <button class="btn-exp" onclick="abrirWhatsApp()">📱 WhatsApp</button>
+  </div>
+  <button class="btn-salvar-compra" onclick="salvarCompraNoHistorico()">💾 Salvar compra no histórico</button>
+  <button class="btn-reset" onclick="resetCheck()">↺ Reiniciar marcações</button>`;
+
+  m.innerHTML=html;
+  updateProgresso();
+}
+
+// ── RENDER ESTOQUE ──
+function renderEstoque(m){
+  const q=document.getElementById('search-estoque')?.value||'';
+  const itens=q?estoque.filter(e=>e.nome.toLowerCase().includes(q.toLowerCase())):estoque;
+
+  let html=`
+  <div class="estoque-header">
+    <div><div class="estoque-title">📦 Estoque Próprio</div><div class="estoque-sub">${estoque.length} produto${estoque.length!==1?'s':''} em estoque</div></div>
+    <button class="btn-add-estoque" onclick="abrirAddEstoque()">+ Adicionar</button>
+  </div>
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input id="search-estoque" class="search-input" type="text" placeholder="Pesquisar no estoque..." value="${q}" oninput="filtrarEstoque(this.value)">
+    ${q?`<span class="search-clear" onclick="limparBuscaEstoque()">✕</span>`:''}
+  </div>`;
+
+  if(estoque.length===0){
+    html+=`<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Nenhum produto em estoque.<br>Clique em + Adicionar para registrar.</div></div>`;
+  }else if(itens.length===0){
+    html+=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum resultado para "<b>${q}</b>".</div></div>`;
+  }else{
+    const catOrder=Object.keys(CATS);
+    const sorted=[...itens].sort((a,b)=>{
+      const ci=catOrder.indexOf(a.categoria||'Mercearia')-catOrder.indexOf(b.categoria||'Mercearia');
+      return ci!==0?ci:a.nome.localeCompare(b.nome,'pt-BR');
+    });
+    const byCat={};
+    sorted.forEach(item=>{const cat=item.categoria||'Mercearia';if(!byCat[cat])byCat[cat]=[];byCat[cat].push(item);});
+    Object.keys(byCat).sort((a,b)=>catOrder.indexOf(a)-catOrder.indexOf(b)).forEach(cat=>{
+      const cd=CATS[cat]||{icon:'🏪'};
+      html+=`<div class="cat-section"><div class="cat-header"><div class="cat-icon">${cd.icon}</div><div class="cat-name">${cat}</div><div class="cat-count">${byCat[cat].length}</div></div>`;
+      byCat[cat].forEach(item=>{
+        const origIdx=estoque.findIndex(e=>e.id===item.id);
+        html+=`<div class="estoque-item">
+          <div class="estoque-info"><div class="estoque-nome">${item.nome}</div><div class="estoque-cat">${cd.icon} ${cat}</div></div>
+          <div class="estoque-controles">
+            <button class="btn-qty" onclick="ajustarEstoque(${origIdx},-1)">−</button>
+            <div class="qty-display" id="eq-${origIdx}">${item.qtd}</div>
+            <button class="btn-qty" onclick="ajustarEstoque(${origIdx},1)">+</button>
+            <span class="estoque-unit"> ${item.unidade||'un'}</span>
+          </div>
+          <button class="btn-rm" onclick="remEstoque(${origIdx})" style="margin-left:4px">✕</button>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+  }
+  m.innerHTML=html;
+}
+
+// ── RENDER HISTÓRICO ──
+function renderHist(m){
+  let html=`<div class="hist-header"><div class="hist-header-title">📋 Histórico de Compras</div><div class="hist-header-sub">${historico.length} registro${historico.length!==1?'s':''}</div></div>`;
+  if(!historico.length){m.innerHTML=html+`<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nenhum histórico ainda.<br>Salve uma compra ou limpe uma lista.</div></div>`;return;}
+  const sorted=[...historico].sort((a,b)=>b.dataTs-a.dataTs);
+  const porData={};
+  sorted.forEach(e=>{const d=new Date(e.dataTs).toLocaleDateString('pt-BR');if(!porData[d])porData[d]=[];porData[d].push(e);});
+  Object.entries(porData).forEach(([data,entries])=>{
+    const totalDia=entries.reduce((a,e)=>a+(e.total||0),0);
+    html+=`<div class="hist-date-group"><div class="hist-date-label">📅 ${data}<span class="hist-date-badge">${entries.length} registro${entries.length!==1?'s':''} · R$ ${totalDia.toFixed(2).replace('.',',')}</span></div>`;
+    entries.forEach(entry=>{
+      const lc=LCORES[entry.loja]||'var(--green)';
+      const lb=LBGS[entry.loja]||'var(--green-lt)';
+      const hora=new Date(entry.dataTs).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      html+=`<div class="hist-entry">
+        <div class="hist-entry-top">
+          <div class="hist-loja-tag" style="color:${lc};background:${lb};border:1px solid ${lc}40">${entry.loja?LNOMES[entry.loja]:entry.tipo==='compra'?'Compra Geral':'Lista'}</div>
+          <div class="hist-entry-time">${hora}</div>
+          <div class="hist-entry-total">R$ ${(entry.total||0).toFixed(2).replace('.',',')}</div>
+        </div>
+        <div class="hist-entry-sub">${entry.itens?.length||0} item${(entry.itens?.length||0)!==1?'s':''} · ${entry.tipo==='compra'?'Compra finalizada':'Lista limpa'}</div>
+        <span class="hist-expand" onclick="toggleHistDetail('${entry.id}')">▼ Ver itens</span>
+        <div class="hist-details" id="hd-${entry.id}">
+          ${(entry.itens||[]).map(it=>`<div class="hist-detail-row"><span class="hist-detail-name">${it.nome}</span><span class="hist-detail-qty">${it.qtd||it.total||1} ${it.unidade||'un'}</span><span class="hist-detail-price">${it.preco?'R$ '+(it.preco*(it.qtd||it.total||1)).toFixed(2).replace('.',','):'-'}</span></div>`).join('')}
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  m.innerHTML=html;
+}
+
+// ── BUSCA SEM RE-RENDER COMPLETO ──
+function filtrarLoja(loja,val){
+  // Re-render só a lista de itens, não o textarea
+  const ta=document.getElementById('chatInput');
+  const draft=ta?ta.value:draftTexts[loja];
+  draftTexts[loja]=draft;
+  render();
+  // Restaurar foco na busca
+  requestAnimationFrame(()=>{
+    const si=document.getElementById('search-'+loja);
+    if(si){si.focus();si.value=val;si.setSelectionRange(val.length,val.length);}
+  });
+}
+function limparBusca(loja){
+  render();
+  requestAnimationFrame(()=>{const si=document.getElementById('search-'+loja);if(si)si.focus();});
+}
+function filtrarCompras(val){
+  render();
+  requestAnimationFrame(()=>{
+    const si=document.getElementById('search-compras');
+    if(si){si.focus();si.value=val;si.setSelectionRange(val.length,val.length);}
+  });
+}
+function limparBuscaCompras(){render();}
+function filtrarEstoque(val){
+  render();
+  requestAnimationFrame(()=>{
+    const si=document.getElementById('search-estoque');
+    if(si){si.focus();si.value=val;si.setSelectionRange(val.length,val.length);}
+  });
+}
+function limparBuscaEstoque(){render();}
+
+// ── AÇÕES LOJA ──
+function saveDraft(loja){const el=document.getElementById('chatInput');if(el)draftTexts[loja]=el.value;}
+function handleKey(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))processarInput();}
+
+function processarInput(){
+  const el=document.getElementById('chatInput');if(!el)return;
+  const txt=el.value.trim();
+  if(!txt){showToast('Digite algo primeiro.',true);return;}
+  const parsed=parseList(txt);
+  if(!parsed.length){showToast('Não entendi. Tente novamente.',true);return;}
+  // Usar banco de dados para categoria
+  parsed.forEach(it=>{it.categoria=getCatFromDB(it.nome);});
+  previewItems=parsed;
+  render();
+  setTimeout(()=>{const pb=document.querySelector('.preview-box');if(pb)pb.scrollIntoView({behavior:'smooth',block:'nearest'});},80);
+}
+
+function confirmarPreview(loja){
+  if(!previewItems.length)return;
+  let novos=0,atualizados=0;
+  previewItems.forEach(item=>{
+    const idx=estado[loja].findIndex(e=>e.nome.toLowerCase().trim()===item.nome.toLowerCase().trim()&&e.unidade===item.unidade);
+    if(idx>=0){estado[loja][idx].qtd+=item.qtd;atualizados++;}
+    else{estado[loja].push({...item});novos++;}
+  });
+  previewItems=[];draftTexts[loja]='';
+  salvar(true);updateBadges();render();
+  const msg=novos&&atualizados?`✓ ${novos} novo(s) + ${atualizados} atualizado(s)`:novos?`✓ ${novos} adicionado${novos!==1?'s':''}`:` ✓ ${atualizados} atualizado${atualizados!==1?'s':''}`;
+  showToast(msg);
+}
+function cancelarPreview(){previewItems=[];render();}
+
+function remItem(loja,i){estado[loja].splice(i,1);salvar();updateBadges();render();}
+
+function limparLoja(loja){
+  if(!estado[loja].length)return;
+  if(!confirm(`Limpar lista de ${LNOMES[loja]}? Será salvo no histórico.`))return;
+  historico.push({id:'h'+Date.now(),dataTs:Date.now(),loja,tipo:'lista',itens:estado[loja].map(it=>({...it,preco:0})),total:0});
+  estado[loja]=[];previewItems=[];
+  salvar(true);updateBadges();render();
+  showToast('Lista limpa e salva no histórico.');
+}
+
+// ── AÇÕES COMPRAS ──
+function gerarConsolidado(){
+  const total=LOJAS.reduce((a,l)=>a+estado[l].length,0);
+  if(!total){showToast('Adicione itens nas lojas primeiro.',true);return;}
+  consolidado=consolidarLocalmente();checklist={};
+  salvar(true);render();
+  showToast(`✓ ${consolidado.length} produtos consolidados!`);
+}
+
+function toggleCheck(idx){
+  if(!checklist[idx])checklist[idx]={checked:false,preco:0};
+  checklist[idx].checked=!checklist[idx].checked;
+  // Atualizar DOM sem re-render
+  const ci=document.getElementById('ci-'+idx);
+  if(ci){
+    ci.classList.toggle('got',checklist[idx].checked);
+    const circle=ci.querySelector('.check-circle');
+    if(circle)circle.textContent=checklist[idx].checked?'✓':'';
+    const name=ci.querySelector('.citem-name');
+    // CSS handles strikethrough via .got class
+  }
+  updateProgresso();
+  salvar();
+}
+
+function updatePreco(idx,val){
+  if(!checklist[idx])checklist[idx]={checked:false,preco:0};
+  checklist[idx].preco=parseFloat(val)||0;
+  const q=consolidado[idx]?.total||1;
+  const p=checklist[idx].preco;
+  const sub=document.getElementById('sub-'+idx);
+  if(sub)sub.textContent=p?'= R$ '+(p*q).toFixed(2).replace('.',','):'';
+  // Recalcular total
+  let t=0;
+  consolidado.forEach((_,i)=>{const pi=checklist[i]?.preco||0;t+=pi*consolidado[i].total;});
+  const tv=document.getElementById('total-val');
+  if(tv)tv.textContent='R$ '+t.toFixed(2).replace('.',',');
+  clearTimeout(window._pt);window._pt=setTimeout(()=>salvar(),800);
+}
+
+function updateProgresso(){
+  const total=consolidado.length;
+  const done=consolidado.filter((_,i)=>checklist[i]?.checked).length;
+  const pct=total?Math.round(done/total*100):0;
+  const pf=document.getElementById('prog-fill');if(pf)pf.style.width=pct+'%';
+  const ht=document.querySelector('.compras-header-left span');
+  // Update done count in header
+  if(done===total&&total>0){
+    let t=0;consolidado.forEach((_,i)=>{const p=checklist[i]?.preco||0;t+=p*consolidado[i].total;});
+    if(!document.querySelector('.done-banner')){
+      const btn=document.querySelector('.btn-salvar-compra');
+      if(btn){const d=document.createElement('div');d.className='done-banner';d.textContent=`🎉 Tudo comprado! Total: R$ ${t.toFixed(2).replace('.',',')}`;btn.before(d);}
+    }
+  }
+}
+
+function salvarCompraNoHistorico(){
+  let t=0;
+  const itens=consolidado.map((it,i)=>{const p=checklist[i]?.preco||0;const s=p*it.total;t+=s;return{...it,preco:p,subtotal:s,qtd:it.total};});
+  historico.push({id:'c'+Date.now(),dataTs:Date.now(),loja:null,tipo:'compra',itens,total:t});
+  salvar(true);showToast('✓ Compra salva no histórico!');
+}
+
+function resetCheck(){checklist={};salvar();renderCompras(document.getElementById('main'));}
+
+// ── ESTOQUE ──
+function abrirAddEstoque(){
+  abrirEditarItem(null,null,true);
+}
+function ajustarEstoque(idx,delta){
+  if(idx<0||idx>=estoque.length)return;
+  estoque[idx].qtd=Math.max(0,estoque[idx].qtd+delta);
+  const el=document.getElementById('eq-'+idx);
+  if(el)el.textContent=estoque[idx].qtd;
+  salvar();
+}
+function remEstoque(idx){
+  if(!confirm('Remover do estoque?'))return;
+  estoque.splice(idx,1);salvar();renderEstoque(document.getElementById('main'));
+}
+
+// ── MODAL EDITAR ITEM ──
+function abrirEditarItem(loja,idx,isEstoque=false){
+  const item=isEstoque?{nome:'',qtd:1,unidade:'un',categoria:'Mercearia'}:(loja?estado[loja][idx]:null);
+  if(!item&&!isEstoque)return;
+  fecharModal();
+  window._catSelecionada=item.categoria||'Mercearia';
+
+  const catGrid=Object.entries(CATS).map(([cat,d])=>`
+    <div class="modal-cat-item ${window._catSelecionada===cat?'selected':''}" onclick="selecionarCatModal('${cat}')">
+      <div class="modal-cat-icon">${d.icon}</div>
+      <div class="modal-cat-name">${cat}</div>
+      ${window._catSelecionada===cat?'<span class="modal-cat-check">✓</span>':''}
+    </div>`).join('');
+
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';modal.id='modalOverlay';
+  modal.innerHTML=`<div class="modal-box">
+    <div class="modal-title">${isEstoque?'📦 Adicionar ao Estoque':'✎ Editar Item'}<span class="modal-close" onclick="fecharModal()">✕</span></div>
+    <div class="modal-field"><div class="modal-field-label">Nome do produto</div><input class="modal-input" id="editNome" type="text" value="${item.nome}" placeholder="Nome do produto"></div>
+    <div class="modal-field-row">
+      <div class="modal-field" style="flex:1"><div class="modal-field-label">Quantidade</div><input class="modal-input" id="editQtd" type="number" min="0.1" step="0.1" value="${item.qtd}"></div>
+      <div class="modal-field" style="flex:1"><div class="modal-field-label">Unidade</div><select class="modal-input" id="editUnit">${['un','kg','g','L','ml','cx','pct','dz'].map(u=>`<option ${item.unidade===u?'selected':''}>${u}</option>`).join('')}</select></div>
+    </div>
+    <div class="modal-field"><div class="modal-field-label">Categoria</div><div class="modal-cat-grid" id="catGrid">${catGrid}</div></div>
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="modal-btn-save" onclick="salvarEdicao('${loja}',${idx},${isEstoque})">✓ Salvar</button>
+    </div>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)fecharModal();});
+  document.body.appendChild(modal);
+}
+
+function selecionarCatModal(cat){
+  window._catSelecionada=cat;
+  document.querySelectorAll('.modal-cat-item').forEach(el=>{
+    const nome=el.querySelector('.modal-cat-name')?.textContent;
+    const sel=nome===cat;
+    el.classList.toggle('selected',sel);
+    const chk=el.querySelector('.modal-cat-check');
+    if(chk)chk.remove();
+    if(sel){const s=document.createElement('span');s.className='modal-cat-check';s.textContent='✓';el.appendChild(s);}
+  });
+}
+
+function salvarEdicao(loja,idx,isEstoque){
+  const nome=document.getElementById('editNome')?.value.trim();
+  const qtd=parseFloat(document.getElementById('editQtd')?.value)||1;
+  const unit=document.getElementById('editUnit')?.value||'un';
+  const cat=window._catSelecionada||'Mercearia';
+  if(!nome){showToast('Nome não pode ser vazio.',true);return;}
+
+  if(isEstoque){
+    estoque.push({id:'e'+Date.now(),nome,qtd,unidade:unit,categoria:cat});
+  }else{
+    estado[loja][idx]={...estado[loja][idx],nome,qtd,unidade:unit,categoria:cat};
+  }
+  fecharModal();salvar(true);updateBadges();render();
+  showToast(isEstoque?'✓ Adicionado ao estoque!':'✓ Item atualizado!');
+}
+
+function fecharModal(){const m=document.getElementById('modalOverlay');if(m)m.remove();window._catSelecionada=null;}
+
+// ── HISTÓRICO ──
+function toggleHistDetail(id){
+  const el=document.getElementById('hd-'+id);if(!el)return;
+  el.classList.toggle('open');
+  const btn=el.previousElementSibling;
+  if(btn)btn.textContent=el.classList.contains('open')?'▲ Fechar':'▼ Ver itens';
+}
+
+// ── EXPORTAR ──
+function buildTexto(){
+  const byCat={};consolidado.forEach(it=>{if(!byCat[it.categoria])byCat[it.categoria]=[];byCat[it.categoria].push(it);});
+  const catOrder=Object.keys(CATS);
+  const cats=Object.keys(byCat).sort((a,b)=>catOrder.indexOf(a)-catOrder.indexOf(b));
+  let txt=`📦 LISTA CONSOLIDADA — ${getSemana()}\n\n`;
+  cats.forEach(cat=>{
+    const cd=CATS[cat]||{icon:'🏪'};
+    txt+=`${cd.icon} ${cat.toUpperCase()}\n`;
+    byCat[cat].forEach(it=>{const bd=LOJAS.filter(l=>it.lojas[l]>0).map(l=>`${LNOMES[l]}:${it.lojas[l]}`).join(' | ');txt+=`• ${it.nome} — ${it.total} ${it.unidade}  (${bd})\n`;});
+    txt+='\n';
+  });
+  return txt;
+}
+function copiarLista(){navigator.clipboard.writeText(buildTexto()).then(()=>showToast('✓ Lista copiada!')).catch(()=>showToast('Erro.',true));}
+function abrirWhatsApp(){
+  const byCat={};consolidado.forEach(it=>{if(!byCat[it.categoria])byCat[it.categoria]=[];byCat[it.categoria].push(it);});
+  const catOrder=Object.keys(CATS);
+  let txt=`📦 *LISTA CONSOLIDADA* — ${getSemana()}\n\n`;
+  Object.keys(byCat).sort((a,b)=>catOrder.indexOf(a)-catOrder.indexOf(b)).forEach(cat=>{
+    const cd=CATS[cat]||{icon:'🏪'};txt+=`${cd.icon} *${cat}*\n`;
+    byCat[cat].forEach(it=>{const bd=LOJAS.filter(l=>it.lojas[l]>0).map(l=>`${LNOMES[l]}: ${it.lojas[l]}`).join(' · ');txt+=`• ${it.nome}: *${it.total} ${it.unidade}*\n  _(${bd})_\n`;});
+    txt+='\n';
+  });
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
+// ── UTILS ──
+function getSemana(){const now=new Date();const j=new Date(now.getFullYear(),0,1);return`Semana ${Math.ceil((((now-j)/86400000)+j.getDay()+1)/7)}/${now.getFullYear()}`;}
+function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(err?'err':'ok');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function showLoader(show){document.getElementById('loader').classList.toggle('show',show);}
+
+// ── GLOBALS ──
+window.goTab=goTab;window.processarInput=processarInput;window.confirmarPreview=confirmarPreview;
+window.cancelarPreview=cancelarPreview;window.remItem=remItem;window.limparLoja=limparLoja;
+window.gerarConsolidado=gerarConsolidado;window.toggleCheck=toggleCheck;window.resetCheck=resetCheck;
+window.copiarLista=copiarLista;window.abrirWhatsApp=abrirWhatsApp;
+window.handleKey=handleKey;window.saveDraft=saveDraft;
+window.filtrarLoja=filtrarLoja;window.limparBusca=limparBusca;
+window.filtrarCompras=filtrarCompras;window.limparBuscaCompras=limparBuscaCompras;
+window.filtrarEstoque=filtrarEstoque;window.limparBuscaEstoque=limparBuscaEstoque;
+window.updatePreco=updatePreco;window.salvarCompraNoHistorico=salvarCompraNoHistorico;
+window.toggleHistDetail=toggleHistDetail;
+window.abrirEditarItem=abrirEditarItem;window.selecionarCatModal=selecionarCatModal;
+window.salvarEdicao=salvarEdicao;window.fecharModal=fecharModal;
+window.abrirAddEstoque=abrirAddEstoque;window.ajustarEstoque=ajustarEstoque;window.remEstoque=remEstoque;
+
+// ── INIT ──
+document.getElementById('wkBadge').textContent=getSemana();
+iniciarSync();
+</script>
+</body>
+</html>
