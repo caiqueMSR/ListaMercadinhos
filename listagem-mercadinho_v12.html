@@ -307,24 +307,36 @@ const CATS={
   "Mercearia":         {icon:"🏪",cor:"#546e7a"},
 };
 
-// ── BUSCA NO BANCO DE PRODUTOS ──
+// ── BUSCA NO BANCO DE PRODUTOS (votação por maioria) ──
 function getCatFromDB(digitado){
   const d=digitado.toLowerCase().trim();
   // 1. Exata
   if(PRODUCT_DB[d])return PRODUCT_DB[d];
-  // 2. O digitado contido em algum nome do banco
-  for(const[nome,cat]of Object.entries(PRODUCT_DB)){
-    if(nome.includes(d))return cat;
+  // 2. Nome começa com o digitado — votação
+  const starts=Object.entries(PRODUCT_DB).filter(([n])=>n.startsWith(d+' ')||n===d);
+  if(starts.length){
+    const cnt={};starts.forEach(([,c])=>cnt[c]=(cnt[c]||0)+1);
+    return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
   }
-  // 3. Palavras do digitado encontradas no banco (score)
+  // 3. Digitado contido em nome — votação por maioria
+  const contains=Object.entries(PRODUCT_DB).filter(([n])=>n.includes(d));
+  if(contains.length){
+    const cnt={};contains.forEach(([,c])=>cnt[c]=(cnt[c]||0)+1);
+    return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
+  }
+  // 4. Por palavras — votação
   const palavras=d.split(/\s+/).filter(p=>p.length>3);
   if(palavras.length){
-    let melhor=null,melhorScore=0;
-    for(const[nome,cat]of Object.entries(PRODUCT_DB)){
-      const score=palavras.reduce((a,p)=>a+(nome.includes(p)?1:0),0);
-      if(score>melhorScore){melhorScore=score;melhor=cat;}
+    const scored=[];
+    Object.entries(PRODUCT_DB).forEach(([n,c])=>{
+      const score=palavras.reduce((a,p)=>a+(n.includes(p)?1:0),0);
+      if(score>0)scored.push([score,c]);
+    });
+    if(scored.length){
+      const best=Math.max(...scored.map(([s])=>s));
+      const cnt={};scored.filter(([s])=>s===best).forEach(([,c])=>cnt[c]=(cnt[c]||0)+1);
+      return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
     }
-    if(melhor&&melhorScore>0)return melhor;
   }
   return 'Mercearia';
 }
@@ -857,7 +869,22 @@ function limparLoja(loja){
 // ── AÇÕES COMPRAS ──
 function gerarConsolidado(){
   const total=LOJAS.reduce((a,l)=>a+estado[l].length,0);
-  if(!total){showToast('Adicione itens nas lojas primeiro.',true);return;}
+  // Se todas as lojas estão vazias, zera o consolidado
+  if(!total){
+    if(consolidado.length){
+      // Verificar se já foi salvo no histórico
+      const jaSalvo=historico.some(h=>h.tipo==='compra'&&h.dataTs&&(Date.now()-h.dataTs)<7*24*60*60*1000);
+      if(!jaSalvo){
+        if(!confirm('Todas as listas estão vazias.\nA lista consolidada atual NÃO foi salva no histórico.\nDeseja zerar mesmo assim?'))return;
+      }
+      consolidado=[];checklist={};
+      salvar(true);render();
+      showToast('Consolidado zerado.');
+    }else{
+      showToast('Adicione itens nas lojas primeiro.',true);
+    }
+    return;
+  }
   consolidado=consolidarLocalmente();checklist={};
   salvar(true);render();
   showToast(`✓ ${consolidado.length} produtos consolidados!`);
